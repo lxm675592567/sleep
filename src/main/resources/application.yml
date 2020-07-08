@@ -1,0 +1,26 @@
+server:
+  port: 8088
+
+
+spring:
+  #数据库
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/bladex_boot?useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&serverTimezone=GMT%2B8&nullCatalogMeansCurrent=true&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    hikari:
+      connection-test-query: SELECT 1
+
+  data:
+    mongodb:
+      uri: mongodb://db_kangyu:db_kangyu_11@10.10.10.54:27017/stl_bladex?authSource=db_kangyu&authMechanism=SCRAM-SHA-1
+
+mybatis-plus:
+  global-config:
+    # 关闭MP3.0自带的banner
+    banner: false
+  mapper-locations:
+    - classpath*:org\springblade\**\mapper\*Mapper.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
