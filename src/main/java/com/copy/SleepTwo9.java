@@ -23,7 +23,7 @@ public class SleepTwo9 {
 * 呼吸率取值
 * */
     public static void main(String[] args) throws ParseException, JSONException {
-        String path = "D:\\项目\\sleep\\sleep\\src\\main\\java\\com\\hife\\艾田对象张志卫20200613.dat";
+        String path = "D:\\项目\\sleep\\sleep\\src\\main\\java\\com\\hife\\黄智.dat";
         EDFParser edf = new EDFParser(path);
         HashMap<String, String> header = edf.header;
         List<EDFRecord> records = edf.records;

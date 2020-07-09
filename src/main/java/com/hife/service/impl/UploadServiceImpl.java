@@ -4,11 +4,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.hife.dao.UploadMapper;
 import com.hife.entity.SleepRecord;
 import com.hife.service.UploadService;
-import com.hife.util.CommUtil;
-import com.hife.util.DateUtil;
-import com.hife.util.GuidUtil;
+import com.hife.util.*;
 
-import com.hife.util.StringUtil;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,17 +66,18 @@ public class UploadServiceImpl implements UploadService {
             return "上传失败，请选择文件";
         }
         String fileName = file.getOriginalFilename();
-        String filePath = "D:\\file\\dat\\";
+        String filePath = HttpclientUtil.get("file.ImgUrl.post")+ separator + "dat"+separator;
         File dest = new File(filePath + fileName);
         //String path = filePath + fileName;
-        String path = "D:/file/dat"  + separator + fileName ;
+        String pathUrl = HttpclientUtil.get("file.ImgUrl")  + separator + "dat" + separator + fileName;
+        String path = filePath  + separator + "dat" + separator + fileName;
         try {
             file.transferTo(dest);
             LOGGER.info("上传成功");
-            return path;
+            return pathUrl;
         } catch (IOException e) {
             LOGGER.error(e.toString(), e);
         }
-        return path;
+        return pathUrl;
     }
 }

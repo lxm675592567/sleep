@@ -1,23 +1,14 @@
 package com.hife.controller;
 
-import com.hife.EDFUtils.EDFParser;
-import com.hife.EDFUtils.EDFRecord;
 import com.alibaba.fastjson.JSONObject;
 import com.hife.service.EdfService;
-import com.hife.util.SleepResultUtil;
-import com.hife.util.SleepResultUtils;
 import com.hife.util.SleepUtil;
-import io.swagger.annotations.*;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("sleepAnalysis/edf")
@@ -141,28 +132,4 @@ public class EdfController {
         return edfService.getSleepDataMap(jsonObject);
     }
 
-    @PostMapping(value = "/getSleepDataMaps")
-    public void getSleepDataMaps(@RequestBody JSONObject jsonObject) throws ParseException, JSONException {
-        JSONObject readFile = SleepUtil.getReadFile(jsonObject);
-        List<Integer> xyResult = (List<Integer>) readFile.get("xyResult");//血氧
-        List<Integer> prResult = (List<Integer>) readFile.get("prResult");//脉率
-        List<Integer> piResult = (List<Integer>) readFile.get("piResult");//搏动指数
-        List<Integer> rrResult = (List<Integer>) readFile.get("rrResult");//呼吸
-        List<Integer> pdrResult = (List<Integer>) readFile.get("pdrResult");//呼吸波
-        JSONObject sleepResult = SleepResultUtils.getSleepResult(readFile);
-        List<List<Object>> results = (List<List<Object>>)sleepResult.get("result");//结果
-        List<List<Object>> xlResult = (List<List<Object>>) sleepResult.get("xlResult");//心率
-        List<List<Object>> smlxResult = (List<List<Object>>) sleepResult.get("smlxResult");
-        JSONObject object = new JSONObject();
-        object.put("xyResult",xyResult);//血氧
-        object.put("prResult",prResult);//脉率
-        object.put("piResult",piResult);//搏动指数
-        object.put("rrResult",rrResult);//呼吸
-        object.put("pdrResult",pdrResult);//呼吸波
-
-        object.put("results",results);//结果
-        object.put("xlResult",xlResult); //心率
-        object.put("smlxResult",smlxResult); //睡眠类型
-        System.out.println("results"+results);
-    }
 }
