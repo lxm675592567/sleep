@@ -124,8 +124,6 @@ public class SleepResultUtil {
         List<List<Object>> results2 = new ArrayList<>();
         xingchengqujian(PrListCopy, qujianlist, date, listTime, results, PrListCopy1, results2);
 
-
-
         //熟睡 中度熟睡 浅睡 清醒
         //先形成波峰波谷区间数组
         List<List<List<Object>>> smresults = new ArrayList<>();
@@ -163,8 +161,8 @@ public class SleepResultUtil {
         getchushishushui(listTimesm, shushui, shushuiList,qingxing,sssj,sszhi);
 
         List<List<List<Object>>> shushuiNewList = new ArrayList<>();
-        int sscishu = 5;
-        //int sscishu = (int) Math.round((double) result.size()/5400);//总时间/90分钟
+        //int sscishu = 5;
+        int sscishu = (int) Math.round((double) result.size()/5400);//总时间/90分钟
         getPaixu(shushuiList, shushuiNewList,sscishu);//按时间大小排序
         //二 获取清醒
         int qxcs = 3;
@@ -1709,7 +1707,11 @@ public class SleepResultUtil {
             }
         }
         if (qingxing.size()>0){
-            qingxingList.add(qingxing.get(0));
+            List<Integer> integers = listTimesm.get(0);
+            List<Object> qxLs = new ArrayList<>();
+            qxLs.add(integers.get(0));qxLs.add(integers.get(1));qxLs.add(integers.get(2));qxLs.add(integers.get(3));
+            qingxingList.add(qxLs);
+//            qingxingList.add(qingxing.get(0));
             int qxzuobiao = (int) qingxing.get(qingxing.size() - 1).get(3);
             int zuobiao = listTimesm.size()-1;
             if (qxzuobiao==zuobiao){
