@@ -66,11 +66,11 @@ public class UploadServiceImpl implements UploadService {
             return "上传失败，请选择文件";
         }
         String fileName = file.getOriginalFilename();
-        String filePath = HttpclientUtil.get("file.ImgUrl.post")+ separator + "dat"+separator;
+        String filePath = HttpclientUtil.get("file.ImgUrl.post")+ separator;
         File dest = new File(filePath + fileName);
         //String path = filePath + fileName;
-        String pathUrl = HttpclientUtil.get("file.ImgUrl")  + separator + "dat" + separator + fileName;
-        String path = filePath  + separator + "dat" + separator + fileName;
+        String pathUrl = HttpclientUtil.get("file.ImgUrl")   + separator + fileName;
+        String path = filePath  + separator + fileName;
         try {
             file.transferTo(dest);
             LOGGER.info("上传成功");
