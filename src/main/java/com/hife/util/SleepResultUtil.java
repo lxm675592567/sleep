@@ -301,7 +301,7 @@ public class SleepResultUtil {
             int hou = (int)qxList.get(i).get(1) ;
             list.add(ts + qian * 1000);
             list.add(ts + hou * 1000);
-            list.add(50);
+            list.add(60);
             list.add("A");
             qt.add(list);
         }
@@ -311,7 +311,7 @@ public class SleepResultUtil {
             int hou =  (int) ksydList.get(i).get(1) ;
             list.add(ts + qian * 1000);
             list.add(ts + hou * 1000);
-            list.add(50);
+            list.add(60);
             list.add("B");
             qt.add(list);
         }
@@ -321,7 +321,7 @@ public class SleepResultUtil {
             int hou =  (int)ssList.get(i).get(1) ;
             list.add(ts + qian * 1000);
             list.add(ts + hou * 1000);
-            list.add(50);
+            list.add(60);
             list.add("C");
             qt.add(list);
         }
@@ -331,7 +331,7 @@ public class SleepResultUtil {
             int hou =  (int)zdssList.get(i).get(1) ;
             list.add(ts + qian * 1000);
             list.add(ts + hou * 1000);
-            list.add(50);
+            list.add(60);
             list.add("D");
             qt.add(list);
         }
@@ -341,7 +341,7 @@ public class SleepResultUtil {
             int hou =  (int) qsList.get(i).get(1) ;
             list.add(ts + qian * 1000);
             list.add(ts + hou * 1000);
-            list.add(50);
+            list.add(60);
             list.add("E");
             qt.add(list);
         }
@@ -351,7 +351,7 @@ public class SleepResultUtil {
             int hou = (int) hxwlList.get(i).get(1) ;
             list.add(ts + qian * 1000);
             list.add(ts + hou * 1000);
-            list.add(25);
+            list.add(30);
             list.add("F");
             qt.add(list);
         }
@@ -361,7 +361,7 @@ public class SleepResultUtil {
             int hou = (int) qujianlist.get(i).get(1) ;
             list.add(ts + qian * 1000);
             list.add(ts + hou * 1000);
-            list.add(50);
+            list.add(60);
             list.add("G");
             qt.add(list);
         }
