@@ -77,7 +77,7 @@ public class SleepUtil {
                 spotype++;
             }else {
                 if (spotype>=300){
-                    if (shangzhi<zhi){
+                    if (shangzhi<zhi && shangzhi!=0){
                         zhi=shangzhi;
                     }
                 }
