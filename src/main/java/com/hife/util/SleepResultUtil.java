@@ -460,6 +460,16 @@ public class SleepResultUtil {
         String endTime = time.getString("endTime");
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = simpleDateFormat.parse(createTime);
+
+        qxList = qxList.stream().sorted((o1, o2) -> {
+            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
+                int c = Integer.valueOf((Integer)o1.get(0)).compareTo(Integer.valueOf((Integer) o2.get(0)));
+                if (c != 0) {
+                    return c;
+                }
+            }
+            return Integer.compare(o1.size(), o2.size());
+        }).collect(Collectors.toList());
         /*
          * 睡眠计算
          * */
@@ -492,15 +502,26 @@ public class SleepResultUtil {
         //睡眠总时间
         long qxzsj =0; //清醒总时间
         long smjxsj =0;//睡眠觉醒时间
+        int jxcsSleep = 0;//觉醒次数
         for (int i = 0; i < qxList.size(); i++) {
             int i1 = (int)qxList.get(i).get(1) - (int)qxList.get(i).get(0);
-            if (1>0){
-                int i2 = (int)qxList.get(i).get(1) - (int)qxList.get(i).get(0);
+            if (i>0){
                 smjxsj  = smjxsj+i1;
+                jxcsSleep++;
             }
             qxzsj = qxzsj+i1;
         }
-        long smzsj = smsj - qxzsj;
+        int qxzh = (int) qxList.get(qxList.size() - 1).get(3);
+        int shouqx = (int) qxList.get(0).get(1);
+        if (qxzh==listTime.size()-1){
+            int qxzhq = (int) qxList.get(qxList.size() - 1).get(0);
+            int qxzhh = (int) qxList.get(qxList.size() - 1).get(1);
+            smjxsj = smjxsj-(qxzhh-qxzhq);
+            shouqx=shouqx+(qxzhh-qxzhq);
+            jxcsSleep = jxcsSleep - 1; //觉醒次数
+        }
+        smjxsj = smjxsj/60;
+        long smzsj = smsj - (qxzsj-shouqx);
         String smzsjSleep = miaozhuanfenmiao(smzsj);
 
         //总记录时间
@@ -525,8 +546,6 @@ public class SleepResultUtil {
         //占比
         String smzbSleep = df.format((double)smSleep/(qxSleep+smSleep)*100);//睡眠
         String qxzbSleep = df.format((double)qxSleep/(qxSleep+smSleep)*100);//清醒
-        //觉醒次数
-        int jxcsSleep = qxList.size();
 
         /*
          * AHI计算
@@ -578,6 +597,8 @@ public class SleepResultUtil {
         }
         if(AHIlist.size()>0){
             ahipingjun = ahizongshu/AHIlist.size();
+        }else {
+            ahizuixiao = 0;
         }
 
         //小时
@@ -688,14 +709,11 @@ public class SleepResultUtil {
         int leastSpO2 = 100;    //最少
         int ninetySpO2 = 0;   //小于百分之九十
         int ninetySmSpO2 = 0;
-        int four = 4;
         int fourSecond =0;
-        int three = 3;
         int threeSecond =0;
         int [] oxygenTime = {92,90,88,85,80,75,70,65,60,55,50,40};//睡眠判定值
         int [] spO2Time = new int[12];//睡眠时间秒
         int [] spO2jxTime = new int[12];//血氧觉醒时间
-        int [] spO2smTime = new int[12];//血氧睡眠时间
         float[] spTime = new float[12];
         //脉率
         int sumHr = 0;      //总数
@@ -729,7 +747,7 @@ public class SleepResultUtil {
                         leastSpO2 = i;
                     }
                     //90
-                    if (i < 90) {
+                    if (i < 88) {
                         ninetySpO2 = ninetySpO2+1;
                     }
                     for (int k = 0; k < qxList.size(); k++) {
@@ -737,7 +755,7 @@ public class SleepResultUtil {
                         int kai = (int) objects.get(0);
                         int shi = (int) objects.get(1);
                         if (sjo2<kai || sjo2>shi ){
-                            if (i < 90) {
+                            if (i < 88) {
                                 ninetySmSpO2 = ninetySmSpO2+1;
                             }
                         }
@@ -831,9 +849,9 @@ public class SleepResultUtil {
         }
 
         float avgSpO2= new BigDecimal((float)sumSpO2/totalJcsj ).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
-        //血氧<90% 在总睡眠时间中比值:
+        //血氧<88(90)% 在总睡眠时间中比值:
         float ninetySMSpO2 = new BigDecimal((float)ninetySmSpO2/totalSmsj ).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
-        //血氧< 90% 在总监测时间中比值:
+        //血氧< 88(90)% 在总监测时间中比值:
         float ninetyJCSpO2 = new BigDecimal((float)ninetySpO2/totalJcsj ).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
         //转换成小时
         float totalSmHours = new BigDecimal((float) o2.size() / 60/60).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
