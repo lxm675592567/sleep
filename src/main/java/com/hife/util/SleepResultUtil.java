@@ -434,7 +434,6 @@ public class SleepResultUtil {
                 list.add(xlq);list.add(xlh);list.add(pj);
                 arrayxlhb.add(list);
             }
-
         }
 
         for (int i = 0; i < arrayxlhb.size(); i++) {
@@ -448,7 +447,6 @@ public class SleepResultUtil {
                 }
             }
         }
-
         arraySort.put("xl",arrayxlSort);
         arraySort.put("qt",arrayqtSort);
         return arraySort;
@@ -732,9 +730,9 @@ public class SleepResultUtil {
         ArrayList<Short> o2 = new ArrayList<>();
 
         int sjo2 = 0;
+        int zeroO2 = 0;
         for (EDFRecord record : records) {
             short[] spO2 = record.SpO2;
-
             for (short i : spO2) {
                 if(i<=100) {
                     sumSpO2 = sumSpO2 + i;
@@ -783,13 +781,12 @@ public class SleepResultUtil {
                     }
                 }else {
                     i=0;
+                    zeroO2++;
                 }
                 o2.add(i);
                 totalJcsj = totalJcsj+1;
                 sjo2++;
             }
-
-
         }
         int chazhi = 0;
         for (int i = 0; i < qxList.size(); i++) {
@@ -803,6 +800,7 @@ public class SleepResultUtil {
         //脉率
         ArrayList<Short> pr = new ArrayList<>();
         int sj = 0;
+        int zeroxl = 0;
         for (EDFRecord record : records) {
             short[] hr = record.HR;
             for (short i : hr) {
@@ -832,14 +830,18 @@ public class SleepResultUtil {
                             }
                         }
                     }
+                }else {
+                    zeroxl++;
                 }
                 pr.add(i);
                 sj++;
             }
 
-
-            //脉率平均数
-            float avgHr = new BigDecimal((float) sumHr / totalSmsj).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+        }
+        //脉率平均差
+        float avgHr = new BigDecimal((float) sumHr/(totalJcsj-zeroxl)).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+        for (EDFRecord record : records) {
+            short[] hr = record.HR;
             for (short i : hr) {
                 if (i < 200) {
                     //脉率差
@@ -848,7 +850,7 @@ public class SleepResultUtil {
             }
         }
 
-        float avgSpO2= new BigDecimal((float)sumSpO2/totalJcsj ).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+        float avgSpO2= new BigDecimal((float)sumSpO2/(totalJcsj-zeroO2) ).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
         //血氧<88(90)% 在总睡眠时间中比值:
         float ninetySMSpO2 = new BigDecimal((float)ninetySmSpO2/totalSmsj ).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
         //血氧< 88(90)% 在总监测时间中比值:
@@ -868,9 +870,9 @@ public class SleepResultUtil {
             int jx = spO2jxTime[i];
             int O2 = spO2Time[i];
             int sm = O2-jx;
-            String O2fen = df.format((double)O2/(double)60);
-            String jxfen = df.format((double)jx/(double)60);
-            String smfen = df.format((double)sm/(double)60);
+            String O2fen = df.format(Math.round((double)O2/(double)60));
+            String jxfen = df.format(Math.round((double)jx/(double)60));
+            String smfen = df.format(Math.round((double)sm/(double)60));
             object.put("zhi","<"+oxygenTime[i]+"%");
             object.put("O2",O2fen);
             object.put("sm",smfen);
@@ -907,8 +909,7 @@ public class SleepResultUtil {
         }
 
         //脉率
-        Avgvalue = new BigDecimal((float) Avgvalue/totalSmsj).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();  //脉率平均差
-        float avgHr = new BigDecimal((float) sumHr/totalSmsj).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+        Avgvalue = new BigDecimal((float) Avgvalue/(totalJcsj-zeroxl)).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
 
         //脉率时间
         for(int i=0;i<hrTime.length;i++){
