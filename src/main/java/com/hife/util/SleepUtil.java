@@ -130,7 +130,11 @@ public class SleepUtil {
             short[] pi = record.AccelarX;
             for (int i = 0; i < 2; i++) {
                 int zhi = pi[i];
-                PI.add(zhi);
+                if (zhi <= 100) {
+                    PI.add(zhi);
+                } else {
+                    PI.add(0);
+                }
             }
             short[] spO2 = record.SpO2;
             for (int i : spO2) {
