@@ -39,12 +39,12 @@ public class SleepUtil {
         List<Integer> PDRList = new ArrayList<>(); //呼吸波原始数据
 
         //此循环遍历原始数据并赋值PrList
-        getfuzhi(records, prList, RR,PI,SPOList,PDRList);
-        List<List<Long>> xyResult =  getyuanshi(time, SPOList);//血氧
-        List<List<Long>> prResult = getyuanshi(time, prList);//脉率
-        List<List<Long>> piResult = getyuanshi(time, PI);//搏动指数
-        List<List<Long>> rrResult = getyuanshi(time, RR);//呼吸
-        List<List<Long>> pdrResult = getyuanshi(time, PDRList);//呼吸波
+        int kbzhi = getfuzhi(records, prList, RR, PI, SPOList, PDRList);
+        List<List<Long>> xyResult =  getyuanshi(time, SPOList, kbzhi);//血氧
+        List<List<Long>> prResult = getyuanshi(time, prList, kbzhi);//脉率
+        List<List<Long>> piResult = getyuanshi(time, PI, kbzhi);//搏动指数
+        List<List<Long>> rrResult = getyuanshi(time, RR, kbzhi);//呼吸
+        List<List<Long>> pdrResult = getyuanshi(time, PDRList, kbzhi);//呼吸波
 
          //持续时长>=5分钟的最低血氧值
         String spozx = getZdxy(SPOList);
@@ -53,7 +53,7 @@ public class SleepUtil {
         JSONObject object = new JSONObject();
         object.put("prList",prList);//
         object.put("SPOList",SPOList);//
-        object.put("PI",PI);//
+        object.put("PI",RR);//搏动指数改为呼吸
         object.put("xyResult",xyResult);//血氧
         object.put("prResult",prResult);//脉率
         object.put("RR",RR);//呼吸
@@ -63,6 +63,7 @@ public class SleepUtil {
         object.put("time",time);
         object.put("records",records);
         object.put("spozx",spozx);//持续时长>=5分钟的最低血氧值
+        object.put("kbzhi",kbzhi);//最后空白前坐标
         return object;
     }
 
@@ -91,11 +92,11 @@ public class SleepUtil {
         return spozx;
     }
 
-    private static List<List<Long>> getyuanshi(JSONObject time, List<Integer> prList) throws ParseException {
+    private static List<List<Long>> getyuanshi(JSONObject time, List<Integer> prList,int kbzhi) throws ParseException {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = simpleDateFormat.parse(time.getString("createTime"));
         List<List<Long>> list = new ArrayList<>();
-        for (int i = 0; i < prList.size(); i++) {
+        for (int i = 0; i <=kbzhi; i++) {
             List<Long> objects = new ArrayList<>();
             long ts = date.getTime();
             if (i == 0){
@@ -108,7 +109,7 @@ public class SleepUtil {
         return list;
     }
 
-    private static void getfuzhi(List<EDFRecord> records, List<Integer> prList, List<Integer> RR, List<Integer> PI,List<Integer> SPOList,List<Integer> PDRList) {
+    private static int getfuzhi(List<EDFRecord> records, List<Integer> prList, List<Integer> RR, List<Integer> PI,List<Integer> SPOList,List<Integer> PDRList) {
         int pdrtype = 0;
         for (EDFRecord record : records) {
             short[] hr = record.HR;
@@ -156,6 +157,15 @@ public class SleepUtil {
 
         }
         prList.set(0, 100);
+        int kbzhi = 0;
+        for (int i = prList.size()-1; i >= 0; i--) {
+            int integer = prList.get(i);
+            if (integer!=0){
+                kbzhi = i;
+                break;
+            }
+        }
+        return kbzhi;
     }
 
     private static JSONObject getTime(HashMap<String, String> header, List<EDFRecord> records) throws ParseException {
