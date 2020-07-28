@@ -77,7 +77,7 @@ public class SleepResultUtil {
          * */
         List<List<Integer>> array = new ArrayList(); //心率众数组
         List<List<Integer>> arrayhx = new ArrayList(); //呼吸心率方差组
-        shijianzhongshujihe(prList, RR, PrListCopy, arrlist3, array, arrayhx,PI,list1);
+        shijianzhongshujihe( RR, PrListCopy, arrlist3, array, arrayhx,PI,list1);
         //shijianzhongshujihe(prList, RR, PrListCopy, arrlist3, array, arrayhx,PI);
 
         //最终结果带0
@@ -184,7 +184,7 @@ public class SleepResultUtil {
         getPaixu(shushuiList, ssNewList,sscishu);//使用shushuiNewList提前排序按时间大小排序
         getssss(shushuiList,sssjs,shushuiList);
 
-        //五 清醒到深睡之前超过120分钟,则找回一次清醒
+        //五 清醒到深睡之前超过120分钟,则找回一次清醒 //改为清醒到清醒找120分钟
         int qxsssj = 7200;
         qingxingList = getqxss60(listTimesm, qingxing, shushuiList, qingxingList,qxsssj);
 
@@ -261,6 +261,18 @@ public class SleepResultUtil {
             }
         }
         int hxwlzws = (int) median(list);
+//        list = list.stream().sorted((o1, o2) -> {
+//            for (int i = 0; i < Math.min(o1, o2); i++) {
+//                int c = Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
+//                if (c != 0) {
+//                    return c;
+//                }
+//            }
+//            return Integer.compare(o1, o2);
+//        }).collect(Collectors.toList());
+//
+//        zuida = list.get(list.size()-7);
+
         hxwlzws = (zuida-hxwlzws)/5+hxwlzws;
         //hxwlzws = (int) ((int)hxwlzws*1.5);
         return hxwlzws;
@@ -356,7 +368,7 @@ public class SleepResultUtil {
             List<Object> list = new ArrayList<>();
             int qian =  (int) qsList.get(i).get(0);
             int hou =  (int) qsList.get(i).get(1);
-            int zhi = (int)zdssList.get(i).get(2);
+            int zhi = (int)qsList.get(i).get(2);
             list.add(ts + qian * 1000);
             list.add(ts + hou * 1000);
             list.add(zhi);
@@ -562,7 +574,7 @@ public class SleepResultUtil {
         String startSleep = simpleDateFormat.format(new Date(date .getTime() + startTimes*1000));
 
         //结束入睡时间
-        Integer qxend = (Integer) qxList.get(qxList.size() - 1).get(0);
+        //Integer qxend = (Integer) qxList.get(qxList.size() - 1).get(0);
         Integer ltend = listTime.get(listTime.size() - 1).get(0);
         long sendTimes = ltend;
         //结束入睡下降上升勿删
@@ -587,11 +599,17 @@ public class SleepResultUtil {
             }
             qxzsj = qxzsj+i1;
         }
-        int qxzh = (int) qxList.get(qxList.size() - 1).get(3);
+        int qxzhSize = qxList.size();
+        if (qxzhSize>1){
+            qxzhSize = qxList.size() - 1;
+        }else {
+            qxzhSize = 0;
+        }
+        int qxzh = (int) qxList.get(qxzhSize).get(3);
         int shouqx = (int) qxList.get(0).get(1);
         if (qxzh==listTime.size()-1){
-            int qxzhq = (int) qxList.get(qxList.size() - 1).get(0);
-            int qxzhh = (int) qxList.get(qxList.size() - 1).get(1);
+            int qxzhq = (int) qxList.get(qxzhSize).get(0);
+            int qxzhh = (int) qxList.get(qxzhSize).get(1);
             smjxsj = smjxsj-(qxzhh-qxzhq);
             shouqx=shouqx+(qxzhh-qxzhq);
             jxcsSleep = jxcsSleep - 1; //觉醒次数
@@ -1558,14 +1576,14 @@ public class SleepResultUtil {
             int zuida = -1;
             int zuixiao = 100;
             for (int j = 0; j < qingxingList.size(); j++) {
-                List shushuiqList = (List) shushuiNewList.get(j).get(0).get(0);
-                List shushuihList = (List) shushuiNewList.get(j).get(shushuiNewList.get(j).size()-1).get(0);
-                int shushuiqyzb = (int) shushuiqList.get(3); //最左边原坐标
-                int shushuihyzb = (int) shushuihList.get(3); //最右边原左标
+//                List shushuiqList = (List) shushuiNewList.get(j).get(0).get(0);
+//                List shushuihList = (List) shushuiNewList.get(j).get(shushuiNewList.get(j).size()-1).get(0);
+//                int shushuiqyzb = (int) shushuiqList.get(3); //最左边原坐标
+//                int shushuihyzb = (int) shushuihList.get(3); //最右边原左标
                 //此时将熟睡改为清醒 之后需要再次修改
                 int i1 = (int) qingxingList.get(j).get(3);
-                shushuiqyzb = i1;
-                shushuihyzb = i1;
+                int shushuiqyzb = i1;
+                int shushuihyzb = i1;
 
                 //左边找坐标最大
                 if (shushuihyzb<qingxingzuobiao && shushuihyzb!=0){
@@ -2709,19 +2727,24 @@ public class SleepResultUtil {
 //        }
 //    }
 
-    private static void shijianzhongshujihe(List<Integer> prList, List<Integer> RR, List<Integer> prListCopy, List<List<Integer>> arrlist3, List<List<Integer>> array, List<List<Integer>> arrayhx, List<Integer> PI,List<List<Integer>> list1) {
+    private static void shijianzhongshujihe( List<Integer> RR, List<Integer> prListCopy, List<List<Integer>> arrlist3, List<List<Integer>> array, List<List<Integer>> arrayhx, List<Integer> PI,List<List<Integer>> list1) {
         long x1 = 0, x2 = 0, y1 = 0, y2 = 0;
         int arrzb = 0;
         for (List<Integer> integers : arrlist3) {
             List<Integer> fanwei = new ArrayList();
             int zuo = integers.get(0);  //循环出的list 左边为初坐标 右边为结束坐标
             int you = integers.get(1);
-            List<Integer> arrylist1 = new ArrayList<>(prList);
+            List<Integer> arrylist1 = new ArrayList<>();
 
+            for (int h = zuo; h < you; h++) {
+                if (h < 0) {
+                    h = 0;
+                }
+                arrylist1.add(prListCopy.get(h));
+            }
             //第三部通过众数获得数组
             int[] arrylist1sz = arrylist1.stream().mapToInt(Integer::valueOf).toArray();
             ModeUtil m = new ModeUtil();
-            int c;
             m.number = new int[arrylist1sz.length];
             m.Mode(arrylist1sz, 0, arrylist1sz.length);
             int y = m.number[0];
@@ -2742,8 +2765,8 @@ public class SleepResultUtil {
             int zysize = you - zuo;
 
             int kai = 0;
-            List<Integer> arrylisthx = new ArrayList<>(prList); //呼吸组
-            List<Integer> arrylist1 = new ArrayList<>(prList);
+            List<Integer> arrylisthx = new ArrayList<>(); //呼吸组
+            List<Integer> arrylist1 = new ArrayList<>();
             for (int h = zuo; h < you; h++) {
                 if (h < 0) {
                     h = 0;

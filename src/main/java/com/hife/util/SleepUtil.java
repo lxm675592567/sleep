@@ -96,7 +96,7 @@ public class SleepUtil {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = simpleDateFormat.parse(time.getString("createTime"));
         List<List<Long>> list = new ArrayList<>();
-        for (int i = 0; i <=kbzhi; i++) {
+        for (int i = 0; i <kbzhi; i++) {
             List<Long> objects = new ArrayList<>();
             long ts = date.getTime();
             if (i == 0){
