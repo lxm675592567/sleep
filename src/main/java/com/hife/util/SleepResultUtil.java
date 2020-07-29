@@ -1263,7 +1263,7 @@ public class SleepResultUtil {
                 List<Object> list = new ArrayList<>();
                 int tdkai = (int) tdList.get(j).get(0);
                 int tdshi = (int) tdList.get(j).get(1);
-                int cha = tdshi - tdkai;
+                int cha = shi - kai;
                 if (tdkai>=kai && tdshi<=shi && cha<600){
                     type++;
                 }
