@@ -2468,6 +2468,7 @@ public class SleepResultUtil {
                             array.get(i).set(1, array.get(i + 1).get(1));
                             array.remove(i + 1);
                             zuolist.remove(zuolisttype);
+                            biaozhun = 100;
                             for (int j = 0; j < array.size(); j++) {
                                 if (j >= i + 1) {
                                     array.get(j).set(3, array.get(j).get(3) - 1);
