@@ -166,7 +166,6 @@ public class SleepCorrectUtil {
                 if (smList.size() != jieshu + 1) {
                     smzhis = smList.get(j + 1);
                 }
-
                 long smqians = (long) smzhis.get(0);
                 long smhous = (long) smzhis.get(1);
                 if (smqian >= qian && smhou <= hou) {
@@ -174,9 +173,30 @@ public class SleepCorrectUtil {
                     if (smqians < qian && smhous > hou) {
                         break;
                     }
+                } else if (smqian <= qian && smhou >= hou) {
+                    list.add(smzhi);
                 }
             }
             sleephf.add(list);
+        }
+
+        for (int i = 0; i < sleephf.size() - 1; i++) {
+            List<List<Object>> lists = sleephf.get(i);
+            if (lists.size() == 1) {
+                List<Object> objects = lists.get(0);
+                sleephf.get(i + 1).add(0, objects);
+                sleephf.get(i + 1).stream().sorted((o1, o2) -> {
+                    for (int j = 0; j < Math.min(o1.size(), o2.size()); j++) {
+                        int c = Long.valueOf((Long) o1.get(0)).compareTo(Long.valueOf((Long) o2.get(0)));
+                        if (c != 0) {
+                            return c;
+                        }
+                    }
+                    return Integer.compare(o1.size(), o2.size());
+                }).collect(Collectors.toList());
+                sleephf.remove(i);
+            }
+
         }
 
         for (int i = 0; i < sleephf.size(); i++) {
@@ -242,180 +262,15 @@ public class SleepCorrectUtil {
         } else if (!typesize.equals("A")) {
             smList.get(smList.size() - 1).set(3, "E");
         }
-
-
-
         /*合并
-        *一先获得清醒集合
-        * 二清醒集合左右判断小于10分钟并且中间不能有深睡合并一数组中
-        *
-        * */
-        List<List<Object>> kuaidongLs = new ArrayList<>();//一先获得清醒集合
-        for (int i = 0; i < smList.size(); i++) {
-            List<Object> list = smList.get(i);
-            String type = (String) list.get(3);
-            if (type.equals("B")){
-                kuaidongLs.add(smList.get(i));
-            }
-            if (list.size()>4){ //处理没有用的坐标并添加新坐标
-                smList.get(i).remove(4);
-            }
-            smList.get(i).add(i);
-        }
-        List<List<Integer>> kdjh = new ArrayList<>();//快动集合
-        for (int i = 0; i < kuaidongLs.size()-1; i++) {
-            List<Object> listFront = kuaidongLs.get(i);
-            long qianFront = (long) listFront.get(0);
-            long houFront = (long) listFront.get(1);
-            String typeq = (String) listFront.get(3);
-            int zbq = (int) listFront.get(4); //原始坐标前
-            List<Object> listBehind = kuaidongLs.get(i+1);
-            long qianBehind = (long) listBehind.get(0);
-            long houBehind = (long) listBehind.get(1);
-            String typeh = (String) listBehind.get(3);
-            int zbh = (int) listBehind.get(4); //原始坐标后
-
-            if (zbq == 127){
-                System.out.println();
-            }
-
-            int cha = (int) (qianBehind-houFront);
-            if (cha>600){ //时间差大于10分钟取消
-                continue;
-            }
-            int sstype =0;//等于0通过
-            for (int j = zbq+1; j < zbh; j++) {//找到该区间内是否有深睡,如果遍历完没有,则添加2个快动到新集合中
-                List<Object> lists = smList.get(j);
-                String type = (String) lists.get(3);
-                if (!type.equals("E")){
-                    sstype = 1;
-                    continue;
-                }
-            }
-            if (sstype == 0){
-                List<Integer> list = new ArrayList<>();
-                if (kdjh.size()>0){
-                    int kdjhsize = (int) kdjh.get(kdjh.size() - 1).get(kdjh.get(kdjh.size() - 1).size()-1);
-                    if (kdjhsize == zbq){//前值=后值合并
-//                        kdjh.get(kdjh.size() - 1).set(1,zbh);
-                        kdjh.get(kdjh.size() - 1).add(zbh);
-                        //list.add(zbh);
-                        //kdjh.add(list);
-                        continue;
-                    }
-                }
-                list.add(zbq);
-                list.add(zbh);
-                kdjh.add(list);
-            }
-        }
+         *一先获得清醒集合
+         * 二清醒集合左右判断小于10分钟并且中间不能有深睡合并一数组中
+         *
+         * */
+        List<List<Object>> arraySort = getKdLists(smList);
 
 
-        //优化,把中间有其他的去掉
-        for (int i = kdjh.size()-1; i >= 0; i--) {
-            List<Integer> integers = kdjh.get(i);
-            int bzs = 0;
-            for (int j = 0; j < integers.size()-1; j++) {
-                int one = integers.get(j);
-                int two = integers.get(j+1);
-                int cha = two - one;
-                if (cha == 1){
-                    continue;
-                }else {
-                    bzs = 1;
-                }
-            }
-             if (bzs == 0){
-                 kdjh.remove(i);
-             }
-        }
-
-       //目前得到合并的快动区间,找到中间区间
-        for (int i = 0; i < kdjh.size(); i++) {
-            List<Integer> integers = kdjh.get(i);
-            int shou = integers.get(0);
-            int wei = integers.get(integers.size()-1);
-            /*
-            * 找到区间总时间,找到快动总时间 ,总时间相等不管,如果不相等,差值除以二,首时间+差值首时间
-            * */
-            int shousize = 0;
-            int weisize = 0;
-            for (int j = 0; j < smList.size(); j++) {
-                int sz = (int) smList.get(j).get(4);
-                if (sz==shou){
-                    shousize = j;
-                }
-                if (sz==wei){
-                    weisize = j;
-                    break;
-                }
-            }
-            long shousj = (long) smList.get(shousize).get(0); //首时间
-            long weisj = (long) smList.get(weisize).get(1); //尾时间
-            int zsj = (int) (weisj-shousj);//总时间
-
-            int kdzsj = 0;//快动总时间
-            for (int j = 0; j < integers.size(); j++) {
-                int zb = integers.get(j);
-                for (int k = 0; k < smList.size(); k++) {
-                    int sz = (int) smList.get(k).get(4);
-                    if (sz == zb){
-                        zb = k;
-                        break;
-                    }
-                }
-                long kai = (long) smList.get(zb).get(0);
-                long shi = (long) smList.get(zb).get(1);
-                int cha = (int) (shi-kai);
-                kdzsj = kdzsj + cha;
-            }
-
-            int chazhi = zsj - kdzsj;//总时间-快动总时间
-            int shoucha = 0;
-            int weicha = 0;
-            long kdshou = 0;//快动首
-            long kdwei = 0;//快动尾
-            if (chazhi>0){
-                 shoucha = chazhi/2;
-                 weicha = chazhi-shoucha;
-                 kdshou = shousj + shoucha;
-                 kdwei = weisj - weicha;
-            }else {
-                break;
-            }
-
-            for (int j = wei; j >= shou; j--) {
-                for (int k = 0; k < smList.size(); k++) {
-                    int sz = (int) smList.get(k).get(4);
-                    if (sz>=shou && sz<=wei){
-                        smList.remove(k);
-                    }
-                }
-            }
-
-            //顺序 浅睡 快动 浅睡
-            List<Object> qsq = new ArrayList<>(); //浅睡前
-            qsq.add(shousj); qsq.add(kdshou);qsq.add(60); qsq.add("E");qsq.add(-1);
-            List<Object> kd = new ArrayList<>(); //快动
-            kd.add(kdshou); kd.add(kdwei); kd.add(60); kd.add("B");kd.add(-1);
-            List<Object> qsh = new ArrayList<>(); //浅睡后
-            qsh.add(kdwei); qsh.add(weisj); qsh.add(60); qsh.add("E");qsh.add(-1);
-            smList.add(qsq); smList.add(kd); smList.add(qsh);
-
-        }
-
-        List<List<Object>> arraySort = new ArrayList(smList);
-        arraySort = arraySort.stream().sorted((o1, o2) -> {
-            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
-                int c = Long.valueOf((Long) o1.get(0)).compareTo(Long.valueOf((Long) o2.get(0)));
-                if (c != 0) {
-                    return c;
-                }
-            }
-            return Integer.compare(o1.size(), o2.size());
-        }).collect(Collectors.toList());
-
-         //呼吸紊乱
+        //呼吸紊乱
         for (int i = 0; i < smhxwlList.size(); i++) {
             List<Object> objects = smhxwlList.get(i);
             arraySort.add(objects);
@@ -449,11 +304,185 @@ public class SleepCorrectUtil {
                 }
                 if (type.equals("C")) {
                     arraySort.get(i).set(3, "D");
+                    if (i==1){
+                        arraySort.get(i).set(3, "E");
+                    }
                     sbz = 1;
                 }
             }
 
         }
+        return arraySort;
+    }
+
+    private static List<List<Object>> getKdLists(List<List<Object>> smList) {
+        /*合并
+         *一先获得清醒集合
+         * 二清醒集合左右判断小于10分钟并且中间不能有深睡合并一数组中
+         *
+         * */
+        List<List<Object>> kuaidongLs = new ArrayList<>();//一先获得清醒集合
+        for (int i = 0; i < smList.size(); i++) {
+            List<Object> list = smList.get(i);
+            String type = (String) list.get(3);
+            if (type.equals("B")) {
+                kuaidongLs.add(smList.get(i));
+            }
+            if (list.size() > 4) { //处理没有用的坐标并添加新坐标
+                smList.get(i).remove(4);
+            }
+            smList.get(i).add(i);
+        }
+        List<List<Integer>> kdjh = new ArrayList<>();//快动集合
+        for (int i = 0; i < kuaidongLs.size() - 1; i++) {
+            List<Object> listFront = kuaidongLs.get(i);
+            long qianFront = (long) listFront.get(0);
+            long houFront = (long) listFront.get(1);
+            String typeq = (String) listFront.get(3);
+            int zbq = (int) listFront.get(4); //原始坐标前
+            List<Object> listBehind = kuaidongLs.get(i + 1);
+            long qianBehind = (long) listBehind.get(0);
+            long houBehind = (long) listBehind.get(1);
+            String typeh = (String) listBehind.get(3);
+            int zbh = (int) listBehind.get(4); //原始坐标后
+
+            int cha = (int) (qianBehind - houFront);
+            if (cha > 600) { //时间差大于10分钟取消
+                continue;
+            }
+            int sstype = 0;//等于0通过
+            for (int j = zbq + 1; j < zbh; j++) {//找到该区间内是否有深睡,如果遍历完没有,则添加2个快动到新集合中
+                List<Object> lists = smList.get(j);
+                String type = (String) lists.get(3);
+                if (!type.equals("E")) {
+                    sstype = 1;
+                    continue;
+                }
+            }
+            if (sstype == 0) {
+                List<Integer> list = new ArrayList<>();
+                if (kdjh.size() > 0) {
+                    int kdjhsize = (int) kdjh.get(kdjh.size() - 1).get(kdjh.get(kdjh.size() - 1).size() - 1);
+                    if (kdjhsize == zbq) {//前值=后值合并
+//                        kdjh.get(kdjh.size() - 1).set(1,zbh);
+                        kdjh.get(kdjh.size() - 1).add(zbh);
+                        //list.add(zbh);
+                        //kdjh.add(list);
+                        continue;
+                    }
+                }
+                list.add(zbq);
+                list.add(zbh);
+                kdjh.add(list);
+            }
+        }
+
+
+        //优化,把中间有其他的去掉
+        for (int i = kdjh.size() - 1; i >= 0; i--) {
+            List<Integer> integers = kdjh.get(i);
+            int bzs = 0;
+            for (int j = 0; j < integers.size() - 1; j++) {
+                int one = integers.get(j);
+                int two = integers.get(j + 1);
+                int cha = two - one;
+                if (cha == 1) {
+                    continue;
+                } else {
+                    bzs = 1;
+                }
+            }
+            if (bzs == 0) {
+                kdjh.remove(i);
+            }
+        }
+
+        //目前得到合并的快动区间,找到中间区间
+        for (int i = 0; i < kdjh.size(); i++) {
+            List<Integer> integers = kdjh.get(i);
+            int shou = integers.get(0);
+            int wei = integers.get(integers.size() - 1);
+            /*
+             * 找到区间总时间,找到快动总时间 ,总时间相等不管,如果不相等,差值除以二,首时间+差值首时间
+             * */
+            int shousize = 0;
+            int weisize = 0;
+            for (int j = 0; j < smList.size(); j++) {
+                int sz = (int) smList.get(j).get(4);
+                if (sz == shou) {
+                    shousize = j;
+                }
+                if (sz == wei) {
+                    weisize = j;
+                    break;
+                }
+            }
+            long shousj = (long) smList.get(shousize).get(0); //首时间
+            long weisj = (long) smList.get(weisize).get(1); //尾时间
+            int zsj = (int) (weisj - shousj);//总时间
+
+            int kdzsj = 0;//快动总时间
+            for (int j = 0; j < integers.size(); j++) {
+                int zb = integers.get(j);
+                for (int k = 0; k < smList.size(); k++) {
+                    int sz = (int) smList.get(k).get(4);
+                    if (sz == zb) {
+                        zb = k;
+                        break;
+                    }
+                }
+                long kai = (long) smList.get(zb).get(0);
+                long shi = (long) smList.get(zb).get(1);
+                int cha = (int) (shi - kai);
+                kdzsj = kdzsj + cha;
+            }
+
+            int chazhi = zsj - kdzsj;//总时间-快动总时间
+            int shoucha = 0;
+            int weicha = 0;
+            long kdshou = 0;//快动首
+            long kdwei = 0;//快动尾
+            if (chazhi > 0) {
+                shoucha = chazhi / 2;
+                weicha = chazhi - shoucha;
+                kdshou = shousj + shoucha;
+                kdwei = weisj - weicha;
+            } else {
+                break;
+            }
+
+            for (int j = wei; j >= shou; j--) {
+                for (int k = 0; k < smList.size(); k++) {
+                    int sz = (int) smList.get(k).get(4);
+                    if (sz >= shou && sz <= wei) {
+                        smList.remove(k);
+                    }
+                }
+            }
+
+            //顺序 浅睡 快动 浅睡
+            List<Object> qsq = new ArrayList<>(); //浅睡前
+            qsq.add(shousj);qsq.add(kdshou);qsq.add(60);qsq.add("E");qsq.add(-1);
+            List<Object> kd = new ArrayList<>(); //快动
+            kd.add(kdshou);kd.add(kdwei);kd.add(60);kd.add("B");kd.add(-1);
+            List<Object> qsh = new ArrayList<>(); //浅睡后
+            qsh.add(kdwei);qsh.add(weisj);qsh.add(60);qsh.add("E");qsh.add(-1);
+            smList.add(qsq);
+            smList.add(kd);
+            smList.add(qsh);
+
+        }
+
+        List<List<Object>> arraySort = new ArrayList(smList);
+        arraySort = arraySort.stream().sorted((o1, o2) -> {
+            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
+                int c = Long.valueOf((Long) o1.get(0)).compareTo(Long.valueOf((Long) o2.get(0)));
+                if (c != 0) {
+                    return c;
+                }
+            }
+            return Integer.compare(o1.size(), o2.size());
+        }).collect(Collectors.toList());
         return arraySort;
     }
 
@@ -482,7 +511,7 @@ public class SleepCorrectUtil {
                     }
                 }
                 int cha = (int) (shi - kai);
-                int cishu = cha/300; //时间除以5分钟
+                int cishu = cha / 300; //时间除以5分钟
                 if (type > cishu) { //改为浅睡
                     smList.get(i).set(3, "E");
                 }
@@ -626,12 +655,12 @@ public class SleepCorrectUtil {
                 ssdandu.add(bzlist);
             }
         }
-
+        int dgxh = 0; //递归循环次数小于50
         if (bzbz > biaozhun + 5) {//删掉快动周围
             //标准值15  坐标  标准坐标 最大值快动坐标 标准list
-            getScssss(biaozhun, bzList, bzzb, bzkdzdbz, bzlists);
+            getScssss(biaozhun, bzList, bzzb, bzkdzdbz, bzlists,dgxh);
         } else if (bzbz < biaozhun - 5) {//增加深睡周围
-            getZjkdss(biaozhun, bzList, bzzb, bzsszdbz, bzlists, ssdandu);
+            getZjkdss(biaozhun, bzList, bzzb, bzsszdbz, bzlists, ssdandu,dgxh);
         }
 
         //以上标准段落校准完成,用标准段落坐标bzzb,往前倒叙递减,往后递增
@@ -646,13 +675,13 @@ public class SleepCorrectUtil {
             for (int j = 0; j < lists.size(); j++) {
                 List<Object> bzlist = lists.get(j);
                 String type = (String) bzlist.get(3);
-               // bzlist.add(i);
+                // bzlist.add(i);
                 if (type.equals("C")) {
                     ssdanduNew.add(bzlist);
                 }
             }
             if (bzNew < bzbzNew) {
-                getZjkdss(bzbzNew + 5, bzList, i, sszdbzNew, lists, ssdanduNew);
+                getZjkdss(bzbzNew + 5, bzList, i, sszdbzNew, lists, ssdanduNew,dgxh);
             }
             bzbzNew = (int) bzList.get(i).get(2);
         }
@@ -669,7 +698,7 @@ public class SleepCorrectUtil {
             for (int j = 0; j < lists.size(); j++) {
                 List<Object> bzlist = lists.get(j);
                 String type = (String) bzlist.get(3);
-               // bzlist.add(i);
+                // bzlist.add(i);
                 if (type.equals("C")) {
                     ssdanduNew.add(bzlist);
                 }
@@ -680,7 +709,7 @@ public class SleepCorrectUtil {
             int kdzdbzNew = (int) bzList.get(i).get(3);//标准快动最大坐标
             int sszdbzNew = (int) bzList.get(i).get(4);//标准深睡最大坐标
             if (bzNew > bzbzNew) {
-                getScssss(bzbzNew - 5, bzList, i, kdzdbzNew, lists);
+                getScssss(bzbzNew - 5, bzList, i, kdzdbzNew, lists,dgxh);
             }
             bzbzNew = (int) bzList.get(i).get(2);
 //            //第一次必须大于bzbzNew,比他大不变,比他小增加
@@ -818,12 +847,12 @@ public class SleepCorrectUtil {
                 ssdandu.add(bzlist);
             }
         }
-
+        int dgxh = 0; //递归循环次数不能多于50
         if (bzbz > biaozhun + 5) {//删掉深睡周围
             //标准值25  坐标  标准坐标 最大值深睡坐标 标准list
-            getScss(biaozhun, bzList, bzzb, bzsszdbz, bzlists);
+            getScss(biaozhun, bzList, bzzb, bzsszdbz, bzlists,dgxh);
         } else if (bzbz < biaozhun - 5) {//增加快动周围
-            getZjkd(biaozhun, bzList, bzzb, bzkdzdbz, bzlists, kddandu);
+            getZjkd(biaozhun, bzList, bzzb, bzkdzdbz, bzlists, kddandu,dgxh);
         }
         //以上标准段落校准完成,用标准段落坐标bzzb,往前倒叙递减,往后递增
         int bzbzNew = (int) bzList.get(bzzb).get(2);//更新后的标准段落比值
@@ -834,7 +863,7 @@ public class SleepCorrectUtil {
             int kdzdbzNew = (int) bzList.get(i).get(3);//标准快动最大坐标
             int sszdbzNew = (int) bzList.get(i).get(4);//标准深睡最大坐标
             if (bzNew > bzbzNew) {
-                getScss(bzbzNew - 5, bzList, i, sszdbzNew, lists);
+                getScss(bzbzNew - 5, bzList, i, sszdbzNew, lists,dgxh);
             }
             bzbzNew = (int) bzList.get(i).get(2);
         }
@@ -851,7 +880,7 @@ public class SleepCorrectUtil {
             for (int j = 0; j < lists.size(); j++) {
                 List<Object> bzlist = lists.get(j);
                 String type = (String) bzlist.get(3);
-               // bzlist.add(j);
+                // bzlist.add(j);
                 if (type.equals("B")) {
                     kddanduNew.add(bzlist);
                 }
@@ -861,7 +890,7 @@ public class SleepCorrectUtil {
             int bzNew = (int) bzList.get(i).get(2);//比值
             int kdzdbzNew = (int) bzList.get(i).get(3);//标准快动最大坐标
             if (bzNew < bzbzNew) {
-                getZjkd(bzbzNew + 5, bzList, i, kdzdbzNew, lists, kddanduNew);
+                getZjkd(bzbzNew + 5, bzList, i, kdzdbzNew, lists, kddanduNew,dgxh);
             }
 //            if (bzNew>bzbzNew){
 //                getZjkd(bzbzNew+5,bzList, i, kdzdbzNew, lists, kddanduNew);
@@ -885,7 +914,7 @@ public class SleepCorrectUtil {
         return j;
     }
 
-    private static void getZjkdss(int biaozhun, List<List<Object>> bzList, int bzzb, int bzkdzdbz, List<List<Object>> bzlists, List<List<Object>> kddandu) {
+    private static void getZjkdss(int biaozhun, List<List<Object>> bzList, int bzzb, int bzkdzdbz, List<List<Object>> bzlists, List<List<Object>> kddandu,int dgxh) {
 //        for (int i = bzkdzdbz+1; i < bzlists.size(); i++) {//往右(时间大)找,找到第一个停止
 //            List<Object> bzlist = bzlists.get(i);
 //            long qian = (long) bzlist.get(0);
@@ -913,7 +942,40 @@ public class SleepCorrectUtil {
 //            }
 //        }
 
-
+        /*
+         * 只有一条快动
+         * */
+        if (kddandu.size() == 1) {
+            for (int i = bzkdzdbz + 1; i < bzlists.size(); i++) {//往右(时间大)找,找到第一个停止
+                List<Object> bzlist = bzlists.get(i);
+                long qian = (long) bzlist.get(0);
+                long hou = (long) bzlist.get(1);
+                long chazhi = hou - qian;
+                String type = (String) bzlist.get(3);
+                if (type.equals("D")) {//断是否是中睡D改为快动
+                    bzlists.get(i).set(3, "B");
+                    long kdz = (long) bzList.get(bzzb).get(0);//快动值
+                    bzList.get(bzzb).set(0, kdz + chazhi);//更新快动值
+                    break;
+                }
+            }
+            for (int i = bzkdzdbz - 1; i >= 0; i--) {//往左(时间小)找
+                List<Object> bzlist = bzlists.get(i);
+                long qian = (long) bzlist.get(0);
+                long hou = (long) bzlist.get(1);
+                long chazhi = hou - qian;
+                String type = (String) bzlist.get(3);
+                if (type.equals("D")) {//判断是否是中睡D改为快动
+                    bzlists.get(i).set(3, "B");
+                    long kdz = (long) bzList.get(bzzb).get(0);//快动值
+                    bzList.get(bzzb).set(0, kdz + chazhi);//更新快动值
+                    break;
+                }
+            }
+        }
+        /*
+         * 最近快动
+         * */
         int kdzj = 7200;//快动最近
         int zjkdz = 0; //最近快动左
         int zjkdy = 0; //最近快动右
@@ -949,12 +1011,14 @@ public class SleepCorrectUtil {
         int bzbizhi = (int) (floor * 100);//标准比值
         bzList.get(bzzb).set(2, bzbizhi);
 
-        if (bzbizhi < biaozhun - 5) {
-            getZjkdss(biaozhun, bzList, bzzb, bzkdzdbz, bzlists, kddandu);
+        if (bzbizhi < biaozhun - 5 && dgxh<50) {
+            dgxh++;
+            getZjkdss(biaozhun, bzList, bzzb, bzkdzdbz, bzlists, kddandu,dgxh);
         }
+        dgxh = 0;
     }
 
-    private static void getZjkd(int biaozhun, List<List<Object>> bzList, int bzzb, int bzkdzdbz, List<List<Object>> bzlists, List<List<Object>> kddandu) {
+    private static void getZjkd(int biaozhun, List<List<Object>> bzList, int bzzb, int bzkdzdbz, List<List<Object>> bzlists, List<List<Object>> kddandu,int dgxh) {
 //        for (int i = bzkdzdbz+1; i < bzlists.size(); i++) {//往右(时间大)找,找到第一个停止
 //            List<Object> bzlist = bzlists.get(i);
 //            long qian = (long) bzlist.get(0);
@@ -986,6 +1050,40 @@ public class SleepCorrectUtil {
         int kdzj = 7200;//快动最近
         int zjkdz = 0; //最近快动左
         int zjkdy = 0; //最近快动右
+        /*
+         * 只有一条快动
+         * */
+        if (kddandu.size() <= 1) {
+            for (int i = bzkdzdbz + 1; i < bzlists.size(); i++) {//往右(时间大)找,找到第一个停止
+                List<Object> bzlist = bzlists.get(i);
+                long qian = (long) bzlist.get(0);
+                long hou = (long) bzlist.get(1);
+                long chazhi = hou - qian;
+                String type = (String) bzlist.get(3);
+                if (type.equals("D")) {//断是否是中睡D改为快动
+                    bzlists.get(i).set(3, "B");
+                    long kdz = (long) bzList.get(bzzb).get(0);//快动值
+                    bzList.get(bzzb).set(0, kdz + chazhi);//更新快动值
+                    break;
+                }
+            }
+            for (int i = bzkdzdbz - 1; i >= 0; i--) {//往左(时间小)找
+                List<Object> bzlist = bzlists.get(i);
+                long qian = (long) bzlist.get(0);
+                long hou = (long) bzlist.get(1);
+                long chazhi = hou - qian;
+                String type = (String) bzlist.get(3);
+                if (type.equals("D")) {//判断是否是中睡D改为快动
+                    bzlists.get(i).set(3, "B");
+                    long kdz = (long) bzList.get(bzzb).get(0);//快动值
+                    bzList.get(bzzb).set(0, kdz + chazhi);//更新快动值
+                    break;
+                }
+            }
+        }
+        /*
+         * 最近快动
+         * */
         for (int i = 0; i < kddandu.size() - 1; i++) {
             long qhou = (long) kddandu.get(i).get(1);//前后值
             long hqou = (long) kddandu.get(i + 1).get(0);//后前值
@@ -1018,12 +1116,14 @@ public class SleepCorrectUtil {
         int bzbizhi = (int) (floor * 100);//标准比值
         bzList.get(bzzb).set(2, bzbizhi);
 
-        if (bzbizhi < biaozhun - 5) {
-            getZjkd(biaozhun, bzList, bzzb, bzkdzdbz, bzlists, kddandu);
+        if (bzbizhi < biaozhun - 5 && dgxh<50) {
+            dgxh++;
+            getZjkd(biaozhun, bzList, bzzb, bzkdzdbz, bzlists, kddandu,dgxh);
         }
+        dgxh=0;
     }
 
-    private static void getScssss(int biaozhun, List<List<Object>> bzList, int bzzb, int bzsszdbz, List<List<Object>> bzlists) {
+    private static void getScssss(int biaozhun, List<List<Object>> bzList, int bzzb, int bzsszdbz, List<List<Object>> bzlists,int dgxh) {
         for (int i = bzsszdbz + 1; i < bzlists.size(); i++) {//往右(时间大)找,找到第一个停止
             List<Object> bzlist = bzlists.get(i);
             long qian = (long) bzlist.get(0);
@@ -1059,12 +1159,14 @@ public class SleepCorrectUtil {
         int bzbizhi = (int) (floor * 100);//标准比值
         bzList.get(bzzb).set(2, bzbizhi);
 
-        if (bzbizhi > biaozhun + 5) {
-            getScssss(biaozhun, bzList, bzzb, bzsszdbz, bzlists);
+        if (bzbizhi > biaozhun + 5 && dgxh<50) {
+            dgxh++;
+            getScssss(biaozhun, bzList, bzzb, bzsszdbz, bzlists,dgxh);
         }
+        dgxh=0;
     }
 
-    private static void getScss(int biaozhun, List<List<Object>> bzList, int bzzb, int bzsszdbz, List<List<Object>> bzlists) {
+    private static void getScss(int biaozhun, List<List<Object>> bzList, int bzzb, int bzsszdbz, List<List<Object>> bzlists,int dgxh) {
         for (int i = bzsszdbz + 1; i < bzlists.size(); i++) {//往右(时间大)找,找到第一个停止
             List<Object> bzlist = bzlists.get(i);
             long qian = (long) bzlist.get(0);
@@ -1123,8 +1225,10 @@ public class SleepCorrectUtil {
 //            }
 //        }
 
-        if (bzbizhi > biaozhun + 5) {
-            getScss(biaozhun, bzList, bzzb, bzsszdbz, bzlists);
+        if (bzbizhi > biaozhun + 5 && dgxh<50) {
+            dgxh++;
+            getScss(biaozhun, bzList, bzzb, bzsszdbz, bzlists,dgxh);
         }
+        dgxh = 0;
     }
 }

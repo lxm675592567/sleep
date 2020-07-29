@@ -53,6 +53,9 @@ public class UploadServiceImpl implements UploadService {
                 double height = Double.valueOf(record.getHeight())*0.01;  double weight = Double.valueOf(record.getWeight());
                 DecimalFormat df = new DecimalFormat("#0.0");
                 String bmi = df.format(weight/(height*height));
+                if (height<=0){
+                    bmi = "0.0";
+                }
                 record.setBMI(bmi);
             }
              record.setDatUrl(null);
