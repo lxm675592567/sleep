@@ -23,7 +23,189 @@ public class SleepCorrectUtil {
         long size = json.getLong("size");
         long ts = date.getTime();
 
-        List<List<Object>> smList = new ArrayList<>();
+        List<List<Object>> smList = new ArrayList<>();//最终数据
+        List<List<Object>> smhxwlList = new ArrayList<>();//呼吸紊乱
+        List<List<Object>> smkbList = new ArrayList<>();//空白
+
+        /*
+        * 数据处理
+        * */
+        JSONObject smlxNew1 = getSjcl(qt, xl, size, ts, smList, smhxwlList, smkbList);
+        if (smlxNew1 != null) return smlxNew1;
+
+        /*
+        * 时间划分:90分钟
+        * */
+        int sj = 5400; //90分钟5400,120分钟7200
+        List<List<List<Object>>> sleephf = new ArrayList<>();//划分
+        int ystype = getSjhf(smList, sj, sleephf);
+
+        /*
+         * 一快动找值(每段递增),标准25%前后不超过5
+         * 1先找到标准段落,1 将求得最大段落比值和最小段落比值/2得到标准比值 2 找到离标准比值最近的段落  3将次段落变为20-30
+         * 如果不在,则找到最近的点进行+或者减,直到在范围内
+         * 2找到标准值段之后,找到他的位置,在他前面的段落从标准往前递减,在他后面的段落从标准开始递增
+         * 规则:
+         * 1段落快动多:则需要减少,找到时间段最长的深睡,先判断左右是否为快动,如果是则删掉,如果不是找下一个,直到找到,删掉后,再判断是否达到标准,达到标准后结束
+         * 2段落快动少:则需要增加,找到最近的两段快动,从中间变成快动
+         * */
+        getksyd(sleephf, ystype);
+
+
+
+        /*
+         * 一深睡找值(每段递减),标准15%前后不超过5
+         * 1先找到标准段落,1 将求得最大段落比值和最小段落比值/2得到标准比值 2 找到离标准比值最近的段落  3将次段落变为10-20
+         * 如果不在,则找到最近的点进行+或者减,直到在范围内
+         * 2找到标准值段之后,找到他的位置,在他前面的段落从标准往前递递增,在他后面的段落从标准开始递减
+         * 规则:
+         * 1段落深睡多:则需要减少,找到时间段最长的快动,先判断左右是否为深睡,如果是则删掉,如果不是找下一个,直到找到,删掉后,再判断是否达到标准,达到标准后结束
+         * 2段落深睡少:则需要增加,找到最近的两段深睡,从中间变成深睡
+         * */
+        getSs(sleephf, ystype);
+
+
+
+        /*
+         * 三 浅睡
+         * 1快动右边中睡变浅睡 2中睡有动变浅睡 3两个深睡之间不能有浅睡(出去清醒和快动)
+         * */
+        getQs(tdList, smList);
+
+
+
+        /*
+         * 形成最后结果
+         * */
+        JSONObject smlxNew = new JSONObject();
+        List<List<Object>> smjg = getSmjg(size, ts, smList, smhxwlList, smkbList);
+
+        smlxNew.put("xl", xl);
+        smlxNew.put("qt", smjg);
+
+        return smlxNew;
+    }
+
+    private static int getSjhf(List<List<Object>> smList, int sj, List<List<List<Object>>> sleephf) {
+        //将时间划分90分钟一段,如果最后一段大于100分钟则也划分,小于则归上一段
+        int kaishi = 0;
+        int jieshu = 0;
+        //90分钟第一个深睡开始 最后一个快动结束
+        for (int i = 0; i < smList.size(); i++) {
+            String type = (String) smList.get(i).get(3);
+            if (type.equals("C")) {
+                kaishi = i;
+                break;
+            }
+            if (i == smList.size() - 1) {
+                kaishi = 0;
+            }
+        }
+        for (int i = smList.size() - 1; i >= 0; i--) {
+            String type = (String) smList.get(i).get(3);
+            if (type.equals("B")) {
+                jieshu = i;
+                break;
+            }
+            if (i == 0) {
+                jieshu = smList.size() - 1;
+            }
+        }
+
+        //找到除数和余数
+        long zuida = (long) smList.get(jieshu).get(1) - (long) smList.get(kaishi).get(0);
+        int chushu = (int) (zuida / sj);
+        if (jieshu < chushu) {
+            chushu = jieshu + 1;
+        }
+        int yushu = (int) (zuida % sj);
+        if (chushu == 0){
+            yushu = 0;
+        }
+        int ystype = 0;//余数type 等于1不找中数
+        if (yushu > 2400) {//余数大于40分钟
+            chushu++;
+            if (yushu < 4200) {//余数大于40分钟小于70分钟则求中数时不找他
+                ystype = 1;
+            }
+        }
+        //划分时间区间
+        List<List<Long>> qujian = new ArrayList<>();
+        for (int i = 0; i < chushu; i++) {
+            List<Long> list = new ArrayList<>();
+            long ls = (long) smList.get(kaishi).get(0);
+            list.add((i * sj + ls));
+            if (i == chushu - 1) {
+                list.add((long) smList.get(jieshu).get(1));
+            } else {
+                list.add((i * sj + sj + ls));
+            }
+            qujian.add(list);
+        }
+        if(chushu==0){ //数据流特别少完不成区间
+            List<Long> tslist = new ArrayList<>();
+            tslist.add((long) smList.get(kaishi).get(0));
+            tslist.add((long) smList.get(jieshu).get(1));
+            qujian.add(tslist);
+        }
+
+        //根据时间区间划分数据sleephf集合保存
+        for (int i = 0; i < qujian.size(); i++) {
+            long qian = qujian.get(i).get(0);
+            long hou = qujian.get(i).get(1);
+            List<List<Object>> list = new ArrayList<>();
+            for (int j = kaishi; j <= jieshu; j++) {
+                List<Object> smzhi = smList.get(j);
+                long smqian = (long) smzhi.get(0);
+                long smhou = (long) smzhi.get(1);
+                List<Object> smzhis = smList.get(j);
+                if (smList.size() != jieshu + 1) {
+                    smzhis = smList.get(j + 1);
+                }
+                long smqians = (long) smzhis.get(0);
+                long smhous = (long) smzhis.get(1);
+                if (smqian >= qian && smhou <= hou) {
+                    list.add(smzhi);
+                    if (smqians < qian && smhous > hou) {
+                        break;
+                    }
+                } else if (smqian <= qian && smhou >= hou) {
+                    list.add(smzhi);
+                }
+            }
+            sleephf.add(list);
+        }
+
+        //特殊情况:出现长段
+        for (int i = 0; i < sleephf.size() - 1; i++) {
+            List<List<Object>> lists = sleephf.get(i);
+            if (lists.size() == 1) {//可能会出现一个长段
+                List<Object> objects = lists.get(0);
+                sleephf.get(i + 1).add(0, objects);
+                sleephf.get(i + 1).stream().sorted((o1, o2) -> {
+                    for (int j = 0; j < Math.min(o1.size(), o2.size()); j++) {
+                        int c = Long.valueOf((Long) o1.get(0)).compareTo(Long.valueOf((Long) o2.get(0)));
+                        if (c != 0) {
+                            return c;
+                        }
+                    }
+                    return Integer.compare(o1.size(), o2.size());
+                }).collect(Collectors.toList());
+                sleephf.remove(i);
+            }
+
+        }
+        //每段里面集合加上坐标
+        for (int i = 0; i < sleephf.size(); i++) {
+            List<List<Object>> lists = sleephf.get(i);
+            for (int j = 0; j < lists.size(); j++) {
+                sleephf.get(i).get(j).add(j);
+            }
+        }
+        return ystype;
+    }
+
+    private static JSONObject getSjcl(List<List<Object>> qt, List<List<Object>> xl, long size, long ts, List<List<Object>> smList, List<List<Object>> smhxwlList, List<List<Object>> smkbList) {
         for (int i = 0; i < qt.size(); i++) {
             List<Object> list = qt.get(i);
             long qian = (long) list.get(0);
@@ -33,10 +215,7 @@ public class SleepCorrectUtil {
             smList.add(list);
         }
 
-
         //获取最后时间,吧空白段删除
-        List<List<Object>> smhxwlList = new ArrayList<>();
-        List<List<Object>> smkbList = new ArrayList<>();//空白
         for (int i = smList.size() - 1; i >= 0; i--) {
             List<Object> list = smList.get(i);
             String biaoshi = (String) list.get(3);
@@ -48,7 +227,6 @@ public class SleepCorrectUtil {
                 if (!biaoshi.equals("F")) {
                     break;
                 }
-
             }
         }
         for (int i = smList.size() - 1; i >= 0; i--) {
@@ -99,160 +277,7 @@ public class SleepCorrectUtil {
                 }
             }
         }
-
-        //将时间划分120分钟一段,如果最后一段大于100分钟则也划分,小于则归上一段
-        //90分钟第一个深睡开始 最后一个快动结束
-        int kaishi = 0;
-        int jieshu = 0;
-        for (int i = 0; i < smList.size(); i++) {
-            String type = (String) smList.get(i).get(3);
-            if (type.equals("C")) {
-                kaishi = i;
-                break;
-            }
-            if (i == smList.size() - 1) {
-                kaishi = 0;
-            }
-        }
-        for (int i = smList.size() - 1; i >= 0; i--) {
-            String type = (String) smList.get(i).get(3);
-            if (type.equals("B")) {
-                jieshu = i;
-                break;
-            }
-            if (i == 0) {
-                jieshu = smList.size() - 1;
-            }
-        }
-
-        int sj = 5400; //90分钟5400
-        List<List<List<Object>>> sleephf = new ArrayList<>();//划分
-
-        long zuida = (long) smList.get(jieshu).get(1) - (long) smList.get(kaishi).get(0);
-        int chushu = (int) (zuida / sj);
-        if (jieshu < chushu) {
-            chushu = jieshu + 1;
-        }
-        int yushu = (int) (zuida % sj);
-        int ystype = 0;//余数type 等于1不找中数
-        if (yushu > 2400) {//余数大于40分钟
-            chushu++;
-            if (yushu < 4200) {//余数大于40分钟小于70分钟则求中数时不找他
-                ystype = 1;
-            }
-        }
-        List<List<Long>> qujian = new ArrayList<>();
-        for (int i = 0; i < chushu; i++) {
-            List<Long> list = new ArrayList<>();
-            long ls = (long) smList.get(kaishi).get(0);
-            list.add((i * sj + ls));
-            if (i == chushu - 1) {
-                list.add((long) smList.get(jieshu).get(1));
-            } else {
-                list.add((i * sj + sj + ls));
-            }
-            qujian.add(list);
-        }
-
-        for (int i = 0; i < qujian.size(); i++) {
-            long qian = qujian.get(i).get(0);
-            long hou = qujian.get(i).get(1);
-            List<List<Object>> list = new ArrayList<>();
-            for (int j = kaishi; j <= jieshu; j++) {
-                List<Object> smzhi = smList.get(j);
-                long smqian = (long) smzhi.get(0);
-                long smhou = (long) smzhi.get(1);
-                List<Object> smzhis = smList.get(j);
-                if (smList.size() != jieshu + 1) {
-                    smzhis = smList.get(j + 1);
-                }
-                long smqians = (long) smzhis.get(0);
-                long smhous = (long) smzhis.get(1);
-                if (smqian >= qian && smhou <= hou) {
-                    list.add(smzhi);
-                    if (smqians < qian && smhous > hou) {
-                        break;
-                    }
-                } else if (smqian <= qian && smhou >= hou) {
-                    list.add(smzhi);
-                }
-            }
-            sleephf.add(list);
-        }
-
-        for (int i = 0; i < sleephf.size() - 1; i++) {
-            List<List<Object>> lists = sleephf.get(i);
-            if (lists.size() == 1) {
-                List<Object> objects = lists.get(0);
-                sleephf.get(i + 1).add(0, objects);
-                sleephf.get(i + 1).stream().sorted((o1, o2) -> {
-                    for (int j = 0; j < Math.min(o1.size(), o2.size()); j++) {
-                        int c = Long.valueOf((Long) o1.get(0)).compareTo(Long.valueOf((Long) o2.get(0)));
-                        if (c != 0) {
-                            return c;
-                        }
-                    }
-                    return Integer.compare(o1.size(), o2.size());
-                }).collect(Collectors.toList());
-                sleephf.remove(i);
-            }
-
-        }
-
-        for (int i = 0; i < sleephf.size(); i++) {
-            List<List<Object>> lists = sleephf.get(i);
-            for (int j = 0; j < lists.size(); j++) {
-                sleephf.get(i).get(j).add(j);
-            }
-        }
-
-        /*
-         * 一快动找值(每段递增),标准25%前后不超过5
-         * 1先找到标准段落,1 将求得最大段落比值和最小段落比值/2得到标准比值 2 找到离标准比值最近的段落  3将次段落变为20-30
-         * 如果不在,则找到最近的点进行+或者减,直到在范围内
-         * 2找到标准值段之后,找到他的位置,在他前面的段落从标准往前递减,在他后面的段落从标准开始递增
-         * 规则:
-         * 1段落快动多:则需要减少,找到时间段最长的深睡,先判断左右是否为快动,如果是则删掉,如果不是找下一个,直到找到,删掉后,再判断是否达到标准,达到标准后结束
-         *   1第一次删除,先删除左右,第二次删除最大左右快动,不管有无
-         * 2段落快动少:则需要增加,找到时间段最长的快动,判断左右是否有中睡,如果有,则变为快动
-         * */
-        getksyd(sleephf, ystype);
-
-
-
-        /*
-         * 一深睡找值(每段递减),标准15%前后不超过5
-         * 1先找到标准段落,1 将求得最大段落比值和最小段落比值/2得到标准比值 2 找到离标准比值最近的段落  3将次段落变为10-20
-         * 如果不在,则找到最近的点进行+或者减,直到在范围内
-         * 2找到标准值段之后,找到他的位置,在他前面的段落从标准往前递减,在他后面的段落从标准开始递增
-         * 规则:
-         * 1段落快动多:则需要减少,找到时间段最长的深睡,先判断左右是否为快动,如果是则删掉,如果不是找下一个,直到找到,删掉后,再判断是否达到标准,达到标准后结束
-         *   1第一次删除,先删除左右,第二次删除最大左右快动,不管有无
-         * 2段落快动少:则需要增加,找到时间段最长的快动,判断左右是否有中睡,如果有,则变为快动
-         * */
-
-        getSs(sleephf, ystype);
-
-
-
-        /*
-         * 三 浅睡
-         * 1快动右边中睡变浅睡 2中睡有动变浅睡 3两个深睡之间不能有浅睡(出去清醒和快动)
-         * */
-        getQs(tdList, smList);
-
-
-
-        /*
-         * 形成最后结果
-         * */
-        JSONObject smlxNew = new JSONObject();
-        List<List<Object>> smjg = getSmjg(size, ts, smList, smhxwlList, smkbList);
-
-        smlxNew.put("xl", xl);
-        smlxNew.put("qt", smjg);
-
-        return smlxNew;
+        return null;
     }
 
     private static List<List<Object>> getSmjg(long size, long ts, List<List<Object>> smList, List<List<Object>> smhxwlList, List<List<Object>> smkbList) {

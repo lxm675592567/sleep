@@ -30,14 +30,22 @@ public class SleepResultUtil {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = simpleDateFormat.parse(createTime);
         //脉率复制list
-        List<Integer> PrListCopy2 = new ArrayList<>(prList); //睡眠类型使用
         List<Integer> PrListCopy = new ArrayList<>(prList);
         List<Integer> PrListCopys = new ArrayList<>(prList); //目的保留为0值
+
+
 
         //此次循环 将数值为0的值赋予给前值的区间(只有区间并不赋值,目的为了在最后画图中将)
         List<List<Integer>> qujianlist = new ArrayList<>();
         //处理为0值 给前值
-        zerochuli(prList, PrListCopy, qujianlist);
+        int zerogs = 0;//为0个数
+        zerogs = zerochuli(prList, PrListCopy, qujianlist, zerogs);
+
+        //处理空值多和小数据dat文件
+        if (PrListCopy.size()<1000 || zerogs<1000 ){
+            JSONObject obj = getJsonObject(PrListCopy,date);
+            return obj;
+        }
 
 
         int a1 = 1;int a2 = 1;int a3 = 1;
@@ -95,8 +103,7 @@ public class SleepResultUtil {
         int h = 50;
         int Q = 120;//呼吸紊乱常数
         List<List<Integer>> hxwl = new ArrayList<>();//呼吸紊乱前50结果
-        List<List<Object>> resultshxxl = new ArrayList<>(); //呼吸紊乱原数据结果
-        getHxwl(RR, date, arrayhx, h, Q, hxwl, resultshxxl,PI);
+        getHxwl(arrayhx, h, Q, hxwl);
 
         /*
          * 五 爬坡算法 1先将array数组小于120秒合并给上一值 2爬坡最多6个
@@ -104,24 +111,23 @@ public class SleepResultUtil {
         getpapo(R, s, array,H);
 
         /*
-         *六 爬坡算法完成后,获得区间原始数组 形成众数数组集合averageList 集合转数组pingjunshu
+         * 六 爬坡算法完成后,获得区间原始数组 形成众数数组集合averageList 集合转数组pingjunshu
          * */
         List<Integer> averageList = new ArrayList();
         getpapohouhebing(date, PrListCopy, array, averageList);
         int[] pingjunshu = averageList.stream().mapToInt(Integer::valueOf).toArray();
-        double pingjun = getpingjun(prList, PrListCopy, PrListCopys); //生成三分钟众数平均数-3
+        //double pingjun = getpingjun(prList, PrListCopy, PrListCopys); //生成三分钟众数平均数-3
 
         /*
          * 七 最后一次合并相等 形成最终数组listTime
          * */
         List<List<Integer>> listTime = new ArrayList<>();
-        getHebin(PrListCopy, n, array, averageList, pingjunshu, pingjun, listTime);
+        getHebin(PrListCopy, n, array, pingjunshu, listTime);
         listTime.get(0).set(0,0);
         //将最后通过listTime 形成最终数组
-        List<List<Long>> results = new ArrayList<>();
-        List<Integer> PrListCopy1 = new ArrayList<>(prList);
-        List<List<Object>> results2 = new ArrayList<>();
-        xingchengqujian(PrListCopy, qujianlist, date, listTime, results, PrListCopy1, results2);
+        List<Integer> PrListCopy1 = new ArrayList<>();
+        List<List<Object>> results = new ArrayList<>();
+        xingchengqujian(PrListCopy, qujianlist, date, listTime, PrListCopy1, results);
 
         //熟睡 中度熟睡 浅睡 清醒
         //先形成波峰波谷区间数组
@@ -143,19 +149,10 @@ public class SleepResultUtil {
         shushui = shuimianshuzu.getShushui();
         qingxing = shuimianshuzu.getQingxing();
         qianshui = shuimianshuzu.getQianshui();
-
         //getssqc(listTimesm, shushui, qingxing);//熟睡去掉前最后值
 
-        //展示睡眠类型数据(测试)
-        List<List<Long>> resultsshushui = new ArrayList<>();
-        List<List<Long>> resultsqingxing = new ArrayList<>();
-        List<List<Long>> resultszdshushui = new ArrayList<>();
-        List<List<Long>> resultsqianshui = new ArrayList<>();
-        //quxianshuzu(PrListCopy2, date, shushui, qingxing, qianshui, zhongdushushui, resultsshushui, resultsqingxing, resultszdshushui, resultsqianshui);
-
         //一 获取初始熟睡
-        int sssj = 180;int sszhi = 4;
-        //List<List<List<Object>>> qingxingList = new ArrayList<>();
+        int sssj = 180;int sszhi = 4;//时间大于3分钟 值差距小于4
         List<List<List<Object>>> shushuiList = new ArrayList<>();
         getchushishushui(listTimesm, shushui, shushuiList,qingxing,sssj,sszhi);
 
@@ -206,7 +203,7 @@ public class SleepResultUtil {
         List<List<Object>> ksydList = new ArrayList<>();//快速眼动
         getksyd(listTimesm, qingxingList, tdList, qxList, ksydList);
 
-        //八(新)将浅睡改为快速眼动,中度熟睡,超过两次次体动,改为浅睡 快速眼动超过两次次变为浅睡
+        //八(新)将浅睡改为快速眼动,中度熟睡,超过两次次体动,改为浅睡 快速眼动超过两次变为浅睡
         getQianShui(zdssList, qsList, tdList,ksydList);
 
         //呼吸紊乱 体动中位数
@@ -220,7 +217,6 @@ public class SleepResultUtil {
 
         //睡眠类型最终结果
         List<List<Object>> smlxResult = new ArrayList<>();
-//        List<List<Object>> smlx = getSmlx(qujianlist, ssList, zdssList, qsList, qxList, ksydList, hxwlList, smlxResult,date,xlList);
         JSONObject smlx = getSmlx(qujianlist, ssList, zdssList, qsList, qxList, ksydList, hxwlList, smlxResult,date,xlList);
 
         //心率最终结果
@@ -229,25 +225,55 @@ public class SleepResultUtil {
 
         JSONObject object = new JSONObject();
         object.put("prListCopy",PrListCopy);//原始值
-        object.put("listTime",listTime);//原始值
-        object.put("result",results2);//曲线图结果
+        object.put("listTime",listTime);//曲线图结果
+        object.put("result",results);//曲线图原始值
         object.put("xlResult",xlResult);//心率
         //object.put("smlxResult",smlx);//睡眠类型
-//        object.put("ksydList",ksydList);//快速眼动
         object.put("qxList",qxList);//清醒
-//        object.put("ssList",ssList);//熟睡
-//        object.put("zdssList",zdssList);//中度熟睡
-//        object.put("qsList",qsList);//浅睡
-//        object.put("tdList",tdList);//体动
-//        object.put("hxwlList",hxwlList);//呼吸紊乱
         JSONObject jsonSm = new JSONObject();
-        jsonSm.put("smlx",smlx);
-        jsonSm.put("date",date);
-        jsonSm.put("tdList",tdList);
-        jsonSm.put("size",PrListCopy.size()-1);
+        jsonSm.put("smlx",smlx);jsonSm.put("date",date);jsonSm.put("tdList",tdList);jsonSm.put("size",PrListCopy.size()-1);
         JSONObject smlxNew = SleepCorrectUtil.getCorrect(jsonSm);
         object.put("smlxResult",smlxNew);//睡眠类型
         return object;
+    }
+
+    private static JSONObject getJsonObject(List<Integer> prListCopy,Date date) {
+        JSONObject obj = new JSONObject();
+        List<List<Object>> xlResult = new ArrayList<>();
+        List<List<Integer>> listTime = new ArrayList<>();
+        List<Integer> list = new ArrayList<>();
+        list.add(0);list.add(prListCopy.size()-1);list.add(100);list.add(0);list.add(2);
+
+        List<List<Object>> results = new ArrayList<>();
+        long ts = date.getTime();
+        for (int i = 0; i < prListCopy.size(); i++) {
+            List<Object> objects = new ArrayList<>();
+            objects.add(ts + i * 1000);
+            objects.add(100);
+            results.add(objects);
+            List<Object> objectsxl = new ArrayList<>();
+            objectsxl.add(ts + i * 1000);
+            objectsxl.add(0);
+            xlResult.add(objectsxl);
+        }
+
+        JSONObject smlx = new JSONObject();
+        List<Object> smlist = new ArrayList<>();
+        smlist.add(ts);smlist.add(ts + (prListCopy.size()-1)*1000);smlist.add(100);smlist.add("A");
+
+        List<Object> xllist = new ArrayList<>();
+        xllist.add(ts);xllist.add(ts + (prListCopy.size()-1)*1000);xllist.add(100);xllist.add("H");
+
+        smlx.put("xl",xllist);
+        smlx.put("qt",smlist);
+
+        obj.put("prListCopy",prListCopy);//原始值
+        obj.put("listTime",listTime);//曲线图结果
+        obj.put("result",results);//曲线图原始值
+        obj.put("xlResult",xlResult);//心率
+        obj.put("qxList",listTime);//清醒
+        obj.put("smlxResult",smlx);//睡眠类型
+        return obj;
     }
 
     private static int getHxwlzws(List<List<Integer>> arrayhx) {
@@ -261,17 +287,6 @@ public class SleepResultUtil {
             }
         }
         int hxwlzws = (int) median(list);
-//        list = list.stream().sorted((o1, o2) -> {
-//            for (int i = 0; i < Math.min(o1, o2); i++) {
-//                int c = Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
-//                if (c != 0) {
-//                    return c;
-//                }
-//            }
-//            return Integer.compare(o1, o2);
-//        }).collect(Collectors.toList());
-//
-//        zuida = list.get(list.size()-7);
 
         hxwlzws = (zuida-hxwlzws)/5+hxwlzws;
         //hxwlzws = (int) ((int)hxwlzws*1.5);
@@ -375,26 +390,6 @@ public class SleepResultUtil {
             list.add("E");
             qt.add(list);
         }
-//        for (int i = 0; i < hxwlList.size(); i++) {//呼吸紊乱
-//            List<Object> list = new ArrayList<>();
-//            int qian = (int) hxwlList.get(i).get(0) ;
-//            int hou = (int) hxwlList.get(i).get(1) ;
-//            list.add(ts + qian * 1000);
-//            list.add(ts + hou * 1000);
-//            list.add(30);
-//            list.add("F");
-//            qt.add(list);
-//        }
-//        for (int i = 0; i < qujianlist.size(); i++) {//空白
-//            List<Object> list = new ArrayList<>();
-//            int qian = (int) qujianlist.get(i).get(0) ;
-//            int hou = (int) qujianlist.get(i).get(1) ;
-//            list.add(ts + qian * 1000);
-//            list.add(ts + hou * 1000);
-//            list.add(60);
-//            list.add("G");
-//            qt.add(list);
-//        }
         for (int i = 0; i < xlList.size(); i++) {//心率
             List<Object> list = new ArrayList<>();
             int qian =  (int) xlList.get(i).get(0) ;
@@ -408,42 +403,9 @@ public class SleepResultUtil {
         }
 
         List<List<Object>> arrayqtSort = new ArrayList(qt);
-        arrayqtSort = arrayqtSort.stream().sorted((o1, o2) -> {
-            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
-                int c = Long.valueOf((Long) o1.get(0)).compareTo(Long.valueOf((Long) o2.get(0)));
-                if (c != 0) {
-                    return c;
-                }
-            }
-            return Integer.compare(o1.size(), o2.size());
-        }).collect(Collectors.toList());
+        int pxzb = 0;
+        arrayqtSort = getPaixus(arrayqtSort, pxzb);
 
-//        for (int i = 1; i < arrayqtSort.size()-1; i++) {
-//            String type = (String) arrayqtSort.get(i).get(3);
-//            if (type.equals("B") || type.equals("A")){
-//                String typeq = (String)arrayqtSort.get(i - 1).get(3);
-//                String typeh = (String)arrayqtSort.get(i + 1).get(3);
-////                if (typeq.equals("A") || typeh.equals("A") ||typeq.equals("B") || typeh.equals("B")){
-////                    continue;
-////                }
-//                if (i>1 ){
-//                    if (typeq.equals("A") || typeq.equals("B")){
-//                        continue;
-//                    }
-//                    arrayqtSort.get(i-1).set(3,"E");
-//                }else {
-//                    arrayqtSort.get(i).set(3,"E");
-//                }
-//                if (i<arrayqtSort.size()-2 ){
-//                    if (typeh.equals("A") || typeh.equals("B")){
-//                        continue;
-//                    }
-//                    arrayqtSort.get(i+1).set(3,"E");
-//                }else {
-//                    arrayqtSort.get(i).set(3,"E");
-//                }
-//            }
-//        }
         for (int i = 0; i < hxwlList.size(); i++) {//呼吸紊乱
             List<Object> list = new ArrayList<>();
             int qian = (int) hxwlList.get(i).get(0) ;
@@ -454,15 +416,7 @@ public class SleepResultUtil {
             list.add("F");
             arrayqtSort.add(list);
         }
-        arrayqtSort = arrayqtSort.stream().sorted((o1, o2) -> {
-            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
-                int c = Long.valueOf((Long) o1.get(0)).compareTo(Long.valueOf((Long) o2.get(0)));
-                if (c != 0) {
-                    return c;
-                }
-            }
-            return Integer.compare(o1.size(), o2.size());
-        }).collect(Collectors.toList());
+        arrayqtSort = getPaixus(arrayqtSort, 0);
 
         for (int i = 0; i < qujianlist.size(); i++) {//空白
             List<Object> list = new ArrayList<>();
@@ -476,17 +430,9 @@ public class SleepResultUtil {
         }
 
         List<List<Object>> arrayxlSort = new ArrayList(xl);
-        arrayxlSort = arrayxlSort.stream().sorted((o1, o2) -> {
-            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
-                int c = Long.valueOf((Long) o1.get(0)).compareTo(Long.valueOf((Long) o2.get(0)));
-                if (c != 0) {
-                    return c;
-                }
-            }
-            return Integer.compare(o1.size(), o2.size());
-        }).collect(Collectors.toList());
+        arrayxlSort = getPaixus(arrayxlSort, 0);
         JSONObject arraySort = new JSONObject();
-        //心率合并
+        //心率相邻合并
         List<List<Object>> arrayxlhb = new ArrayList();
         int xlty=1;int xlq=0;int xlh=0;int xlzs=0;
         for (int i = 1; i < arrayxlSort.size(); i++) {
@@ -494,29 +440,28 @@ public class SleepResultUtil {
             long qian = (Long)arrayxlSort.get(i - 1).get(1);
             long hou = (Long)arrayxlSort.get(i).get(0);
 
-            int zhi = (int) arrayxlSort.get(i - 1).get(2);
-            int hzhi = (int) arrayxlSort.get(i).get(2);
+            int qzhi = (int) arrayxlSort.get(i - 1).get(2);
+            int zhi = (int) arrayxlSort.get(i).get(2);
             if (qian==hou){
                 if (xlty==1){
                     xlq = i-1;
                 }
-                xlzs = zhi+xlzs;
+                xlzs = qzhi+xlzs;
                 xlty++;
             }else {
                 if (xlty==1){
-                    xlzs = zhi;
+                    xlzs = qzhi;
                 }
                 xlh = i-1;
                 int pj = xlzs/xlty;
                 list.add(xlq);list.add(xlh);list.add(pj);
                 arrayxlhb.add(list);
-                //System.out.println("xlq="+xlq+"  xlh="+xlh+"  xlty="+xlty+"  xlzs="+xlzs+"  pj="+pj);
                 xlq = i;xlty = 1;xlzs = 0;
             }
             if (i==arrayxlSort.size()-1){
                 xlh = i;
                 if (xlty==1){
-                    xlzs = hzhi;
+                    xlzs = zhi;
                 }
                 int pj = xlzs/xlty;
                 list.add(xlq);list.add(xlh);list.add(pj);
@@ -540,6 +485,19 @@ public class SleepResultUtil {
         return arraySort;
     }
 
+    private static List<List<Object>> getPaixus(List<List<Object>> arrayqtSort, int pxzb) {
+        arrayqtSort = arrayqtSort.stream().sorted((o1, o2) -> {
+            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
+                int c = Long.valueOf((Long) o1.get(pxzb)).compareTo(Long.valueOf((Long) o2.get(pxzb)));
+                if (c != 0) {
+                    return c;
+                }
+            }
+            return Integer.compare(o1.size(), o2.size());
+        }).collect(Collectors.toList());
+        return arrayqtSort;
+    }
+
 
     public static JSONObject getJcszjs(List<EDFRecord> records, JSONObject time, List<Integer> RR, List<Integer> prListCopy, List<List<Integer>> listTime, List<List<Object>> qxList) throws JSONException, ParseException {
         String createTime = time.getString("createTime");
@@ -547,15 +505,7 @@ public class SleepResultUtil {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = simpleDateFormat.parse(createTime);
 
-        qxList = qxList.stream().sorted((o1, o2) -> {
-            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
-                int c = Integer.valueOf((Integer)o1.get(0)).compareTo(Integer.valueOf((Integer) o2.get(0)));
-                if (c != 0) {
-                    return c;
-                }
-            }
-            return Integer.compare(o1.size(), o2.size());
-        }).collect(Collectors.toList());
+        qxList = getPaixus(qxList, 0);
         /*
          * 睡眠计算
          * */
@@ -1221,15 +1171,7 @@ public class SleepResultUtil {
         }
 
         List<List<Integer>> xlSort = new ArrayList(arrayxl); //排序数组
-        xlSort = xlSort.stream().sorted((o1, o2) -> {
-            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
-                int c = Integer.valueOf(o1.get(2)).compareTo(Integer.valueOf(o2.get(2)));
-                if (c != 0) {
-                    return c;
-                }
-            }
-            return Integer.compare(o1.size(), o2.size());
-        }).collect(Collectors.toList());
+        xlSort = getPaixu(xlSort, 2);
         int xlsize = 0;
         if (xlSort.size()>50){
             xlsize = xlSort.size()-50;
@@ -1275,108 +1217,6 @@ public class SleepResultUtil {
             }
         }
     }
-//    private static void getksyd(List<List<Integer>> listTimesm, List<List<Object>> qingxingList, List<List<Integer>> tdList, List<List<Object>> qxList, List<List<Object>> ksydList) {
-//        List<List<List<Object>>> ksydqjList = new ArrayList<>();//快速眼动区间list
-//        List<List<Object>> kydList = new ArrayList<>(qingxingList);//快速眼动
-//        for (int i = 0; i < qingxingList.size(); i++) {
-//            int kai = (int) qingxingList.get(i).get(0);
-//            int shi = (int) qingxingList.get(i).get(1);
-//            int size = (int) qingxingList.get(i).get(3);
-//            List<List<Object>> kdlist = new ArrayList<>();
-//            kdlist.add(qingxingList.get(i));
-//            if  (size==0 ||size ==listTimesm.size()-1 ){
-//                qxList.add(qingxingList.get(i));
-//                continue;
-//            }
-//            for (int j = 0; j < tdList.size(); j++) {
-//                List<Object> list = new ArrayList<>();
-//                int tdkai = (int) tdList.get(j).get(0);
-//                int tdshi = (int) tdList.get(j).get(1);
-//                if (tdkai>=kai && tdshi<=shi){
-//                    list.add(tdList.get(j).get(0));list.add(tdList.get(j).get(1));list.add(qingxingList.get(i).get(2));list.add(qingxingList.get(i).get(3));list.add(qingxingList.get(i).get(4));
-//                    qxList.add(list);
-//                    kdlist.add(list);
-//
-//                }
-//            }
-//            ksydqjList.add(kdlist);
-//        }
-//
-//        //遍历快速眼动,去掉第一段和最后一段为清醒
-//        //int ksydsize = kydList.size();
-//        for (int i = 0; i < kydList.size(); i++) {
-//            int size = (int) kydList.get(i).get(3);
-//            if (size==0 || size ==listTimesm.size()-1 ){
-//                kydList.remove(i);
-//                i--;
-//            }
-//        }
-//
-//        //清醒整理
-//        for (int i = 0; i < ksydqjList.size(); i++) {
-//            List<List<Object>> lists = ksydqjList.get(i);
-//            if (lists.size()==1){
-//                ksydList.add(lists.get(0));
-//                continue;
-//            }
-//            List<Object> wanzheng = lists.get(0);
-//            int wzzuo = (int) wanzheng.get(0);
-//            int wzyou = (int) wanzheng.get(1);
-//            lists.remove(0);
-//            lists = lists.stream().sorted((o1, o2) -> {
-//                for (int j = 0; j < Math.min(o1.size(), o2.size()); j++) {
-//                    int c = Integer.valueOf((Integer) o1.get(0)).compareTo(Integer.valueOf((Integer) o2.get(0)));
-//                    if (c != 0) {
-//                        return c;
-//                    }
-//                }
-//                return Integer.compare(o1.size(), o2.size());
-//            }).collect(Collectors.toList());
-//            //排序完进行遍历
-//            int type = 0;
-//            for (int j = 0; j < lists.size(); j++) {
-//                List<Object> wanz = new ArrayList<Object>(wanzheng);
-//                //先判断左值是否相等
-//                List<Object> zhiList = lists.get(j);
-//                int zuo = (int) zhiList.get(0);
-//                int you = (int) zhiList.get(1);
-//                int zuoj = zuo;
-//                int yuoj = you;
-//                if (wzzuo==zuo && wzyou==you){
-//                    break;
-//                }
-//                if (lists.size()-1>j){
-//                    zuoj = (int)lists.get(j+1).get(0);
-//                }else {
-//                    zuoj = wzyou;
-//                }
-//                if (j>0){
-//                    yuoj = (int) lists.get(j-1).get(1);
-//                }else {
-//                    yuoj = wzzuo;
-//                }
-//                if (wzzuo==zuo){
-//                    type=1; //等于1是指开头为0
-//                }
-//
-//                if (type==1){
-//                    wanz.set(0,you);
-//                    wanz.set(1,zuoj);
-//                }else {
-//                    wanz.set(0,yuoj);
-//                    wanz.set(1,zuo);
-//
-//                }
-//                ksydList.add(wanz);
-//                if (j==lists.size()-1 && wzyou!=you){//最后值不对应即在中间情况需要再加一级
-//                    List<Object> wanzhengnew = new ArrayList<>(wanz);
-//                    wanzhengnew.set(0,you);
-//                    wanzhengnew.set(1,wzyou);
-//                    ksydList.add(wanzhengnew);
-//                }
-//            }
-//        }
-//    }
 
     private static void getQianShui(List<List<Object>> zdssList, List<List<Object>> qsList, List<List<Integer>> tdList,List<List<Object>> ksydList) {
         //将浅睡改为快速眼动
@@ -1559,15 +1399,6 @@ public class SleepResultUtil {
     }
 
     private static List<List<Object>> getqxss60(List<List<Integer>> listTimesm, List<List<Object>> qingxing, List<List<List<Object>>> shushuiNewList, List<List<Object>> qingxingList,int qxsssj) {
-//        qingxingList = qingxingList.stream().sorted((o1, o2) -> {
-//            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
-//                int c = Integer.valueOf((Integer) o1.get(0)).compareTo(Integer.valueOf((Integer) o2.get(0)));
-//                if (c != 0) {
-//                    return c;
-//                }
-//            }
-//            return Integer.compare(o1.size(), o2.size());
-//        }).collect(Collectors.toList());
         int size = qingxingList.size();
         for (int i = 0; i < size; i++) {
             //1先找到qingxinglist原坐标 2遍历熟睡list 分左右 if<坐标为左 判断 用清醒前坐标-熟睡后坐标>3600 找回一次清醒
@@ -1577,10 +1408,6 @@ public class SleepResultUtil {
             int zuida = -1;
             int zuixiao = 100;
             for (int j = 0; j < qingxingList.size(); j++) {
-//                List shushuiqList = (List) shushuiNewList.get(j).get(0).get(0);
-//                List shushuihList = (List) shushuiNewList.get(j).get(shushuiNewList.get(j).size()-1).get(0);
-//                int shushuiqyzb = (int) shushuiqList.get(3); //最左边原坐标
-//                int shushuihyzb = (int) shushuihList.get(3); //最右边原左标
                 //此时将熟睡改为清醒 之后需要再次修改
                 int i1 = (int) qingxingList.get(j).get(3);
                 int shushuiqyzb = i1;
@@ -1603,15 +1430,12 @@ public class SleepResultUtil {
             if (zuida>-1){
                 int zuohou = listTimesm.get(zuida).get(1);
                 int zuocha = Math.abs(zuohou - qingxingqzb);
-                int zuozdz = 0; //左最大值
                 int zuozb = 0; //左坐标
                 if (zuocha>qxsssj){
                     //先找到大于zuohou小于qingxingqzb区间的清醒原数值
                     for (int j = 0; j < qingxing.size(); j++) {
                         int one = (int) qingxing.get(j).get(0);
                         int two = (int) qingxing.get(j).get(1);
-                        int zhi = (int) qingxing.get(j).get(2);
-                        int zuobiao = (int) qingxing.get(j).get(3);
                         if (one>zuohou && two<qingxingqzb){
                             zuozb = j;
                             break;
@@ -1625,15 +1449,12 @@ public class SleepResultUtil {
             if (zuixiao<100){
                 int yuohou = listTimesm.get(zuixiao).get(0);
                 int yuocha = Math.abs(yuohou - qingxinghzb);
-                int yuozxz = 0; //左最小值
                 int yuozb = 0; //左坐标
                 if (yuocha>qxsssj){
                     //先找到大于zuohou小于qingxingqzb区间的清醒原数值
                     for (int j = 0; j < qingxing.size(); j++) {
                         int one = (int) qingxing.get(j).get(0);
                         int two = (int) qingxing.get(j).get(1);
-                        int zhi = (int) qingxing.get(j).get(2);
-                        int zuobiao = (int) qingxing.get(j).get(3);
                         if (one>qingxinghzb && two<yuohou){
                             yuozb = j;
                             break;
@@ -1948,21 +1769,21 @@ public class SleepResultUtil {
             List<List<Object>> list = new ArrayList<>();
             int zuobiao = (int) shushui.get(i).get(3);
             List<Integer> integers = listTimesm.get(zuobiao);
-
+            //等于1只往左找,等于倒1只往右找
             if (zuobiao==1){
                 List<Integer> integers2 = listTimesm.get(zuobiao+1);
                 int yuocha = (int) listTimesm.get(zuobiao+1).get(1) - (int) listTimesm.get(zuobiao+1).get(0);
                 int yuozhi = Math.abs((int) listTimesm.get(zuobiao+1).get(2) - (int) listTimesm.get(zuobiao).get(2));
                 list.add(Collections.singletonList(integers));
                 if (yuocha>sssj && yuozhi<sszhi){
-                    list.add(Collections.singletonList(integers2));//+
+                    list.add(Collections.singletonList(integers2));
                 }
-            }else if (zuobiao == listTimesm.size()-2){
+            }else if (zuobiao == listTimesm.size()-1){
                 List<Integer> integers1 = listTimesm.get(zuobiao-1);
                 int zuocha = (int) listTimesm.get(zuobiao-1).get(1) - (int) listTimesm.get(zuobiao-1).get(0);
-                int zuozhi = Math.abs((int) listTimesm.get(i-1).get(2) - (int) listTimesm.get(zuobiao).get(2));
+                int zuozhi = Math.abs((int) listTimesm.get(zuobiao-1).get(2) - (int) listTimesm.get(zuobiao).get(2));
                 if (zuocha>sssj && zuozhi<sszhi) {
-                    list.add(Collections.singletonList(integers1));//-
+                    list.add(Collections.singletonList(integers1));
                 }
                 list.add(Collections.singletonList(integers));
             }else {
@@ -2114,16 +1935,7 @@ public class SleepResultUtil {
             dblist.add(cha);
             dblists.add(dblist);
         }
-
-        dblists = dblists.stream().sorted((o1, o2) -> {
-            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
-                int c = Integer.valueOf((Integer) o1.get(1)).compareTo(Integer.valueOf((Integer) o2.get(1)));
-                if (c != 0) {
-                    return c;
-                }
-            }
-            return Integer.compare(o1.size(), o2.size());
-        }).collect(Collectors.toList());
+        dblists =getPaixu(dblists,1);
 
         for (int i = dblists.size() - 1; i >= 0; i--) {
             int zuobiao = dblists.get(i).get(0);
@@ -2179,7 +1991,7 @@ public class SleepResultUtil {
         return createTime;
     }
 
-    private static void getHebin(List<Integer> prListCopy, int n, List<List<Integer>> array, List<Integer> averageList, int[] pingjunshu, double pingjun, List<List<Integer>> listTime) {
+    private static void getHebin(List<Integer> prListCopy, int n, List<List<Integer>> array,  int[] pingjunshu,  List<List<Integer>> listTime) {
         List<List<Integer>> resultList = new ArrayList<>();
         List<Integer> rsList = new ArrayList<>();
         //获取众数后再次对比<n求得最后区间数组
@@ -2198,6 +2010,12 @@ public class SleepResultUtil {
                     css = 1;
                 } else {
                     css++;
+                    if (i==pingjunshu.length-1){
+                        jieshupj = css + kaishipj;
+                        list.add(kaishipj);
+                        list.add(jieshupj);
+                        resultList.add(list);
+                    }
                 }
             } else { //判断前值是否小于0 若小于0
                 if (i > 1) {
@@ -2235,8 +2053,6 @@ public class SleepResultUtil {
         }
 
         //取得区间(众数 需在找到真时间)
-        //System.out.println(resultList);
-
 
         for (int i = 0; i < resultList.size(); i++) {
             List<Integer> ss = new ArrayList<>();
@@ -2266,7 +2082,6 @@ public class SleepResultUtil {
         m.Mode(arrylistsz, 0, arrylistsz.length);
         int y = m.number[0];
 
-        //for (int i = 0; i < listTime.size(); i++) {
         List<Integer> list = new ArrayList<>();
         if (y==0){
             listTime.get(listTime.size() - 1).set(1, prListCopy.size() - 1);
@@ -2276,8 +2091,6 @@ public class SleepResultUtil {
             list.add(y);
             listTime.add(list);
         }
-
-        //}
     }
 
     private static double getpingjun(List<Integer> prList, List<Integer> prListCopy, List<Integer> prListCopys) {
@@ -2285,7 +2098,7 @@ public class SleepResultUtil {
         int zuixiao = 200;
         int zuida = 0;
         int fenzhong = 180;
-        // List<Integer> Prlist35 = new ArrayList<>(PrList);
+
         for (int i = 121; i <= fenzhong + 1; i++) {
             Integer integer = prListCopy.get(i);
             Prlistmiao.add(integer);
@@ -2300,14 +2113,12 @@ public class SleepResultUtil {
         int[] ints = prListCopy.stream().mapToInt(Integer::valueOf).toArray();
         //众数
         ModeUtil m = new ModeUtil();
-        int c;
         m.number = new int[ints.length];
         m.Mode(ints, 0, ints.length);
-        int zhongshu = m.number[0];
         ModeUtil m1 = new ModeUtil();
         m1.number = new int[Prlistmiao240.length];
         m1.Mode(Prlistmiao240, 0, Prlistmiao240.length);
-        int zhongshu4 = m1.number[0];
+        int zhongshu = m1.number[0];
 
         //不算为0者
         for (int i = prListCopys.size() - 1; i >= 0; i--) {
@@ -2317,11 +2128,8 @@ public class SleepResultUtil {
             }
         }
         int[] notzero = prListCopys.stream().mapToInt(Integer::valueOf).toArray();
-        int avenotzero = average(notzero, notzero.length);
-        int avenot35 = average(Prlistmiao240, Prlistmiao240.length); //3-5分钟
-        int average = average(ints, ints.length);
 
-        return zhongshu4 - 3;
+        return zhongshu - 3;
     }
 
     private static void getpapohouhebing(Date date, List<Integer> prListCopy, List<List<Integer>> array, List<Integer> averageList) {
@@ -2364,16 +2172,9 @@ public class SleepResultUtil {
     private static void getpapo(int r, int s, List<List<Integer>> array,int h) {
 
         List<List<Integer>> arraySort = new ArrayList(array); //排序数组
+        int pxzb = 2; //排序坐标
 
-        arraySort = arraySort.stream().sorted((o1, o2) -> {
-            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
-                int c = Integer.valueOf(o1.get(2)).compareTo(Integer.valueOf(o2.get(2)));
-                if (c != 0) {
-                    return c;
-                }
-            }
-            return Integer.compare(o1.size(), o2.size());
-        }).collect(Collectors.toList());
+        arraySort = getPaixu(arraySort, pxzb);
 
         int xiao = 0;
         while (true) { //*需修改
@@ -2384,16 +2185,10 @@ public class SleepResultUtil {
 
             //先往左边找4 找到后如果有合并则
             int zuotype = 0; //左边次数
-            int xiajiangtypez = 0; //下降类型
             List<List<Integer>> zuolist = new ArrayList();
             for (int i = zuixiaozhizb; i > 0; i--) {
                 Integer houzhi = array.get(i).get(2); //后值
                 Integer qianzhi = array.get(i - 1).get(2); //前值
-                //Integer xiajiangzhiz = array.get(i-2).get(2);
-                Integer xiajiangzhiz = array.get(i - 1).get(2); //下降值
-                if (i > 1) {
-                    xiajiangzhiz = array.get(i - 2).get(2); //前值
-                }
 
                 if (qianzhi - houzhi >= 0 && qianzhi!=100) {//代表上升
                     if (zuotype == 0) {
@@ -2448,7 +2243,6 @@ public class SleepResultUtil {
 
             int biaozhun = 100;
             int hbzuobiaoz = 0; //合并左边坐标
-            int hbzuobiaoy = 0; //右边坐
             int zuolisttype = 0;
             for (int l = 0; l <= zuotype - r; l++) {
                 if (zuotype > r) { //如果次数>4 合并完一次 找一次然后再重新找 直到<4
@@ -2457,7 +2251,6 @@ public class SleepResultUtil {
                         if (cha < biaozhun) {
                             biaozhun = cha;
                             hbzuobiaoz = zuolist.get(i + 1).get(3);
-                            hbzuobiaoy = hbzuobiaoz;
                             zuolisttype = i;
                         }
                     }
@@ -2475,13 +2268,6 @@ public class SleepResultUtil {
                                     array.get(j).set(3, array.get(j).get(3) - 1);
                                 }
                             }
-//                            array.get(i-1).set(1, array.get(i).get(1));
-//                            array.remove(i);
-//                            for (int j = 0; j < array.size(); j++) {
-//                                if (j >= i ) {
-//                                    array.get(j).set(3, array.get(j).get(3) - 1);
-//                                }
-//                            }
                             break;
                         }
                     }
@@ -2492,16 +2278,10 @@ public class SleepResultUtil {
 
             //往右边找4 找到后如果有合并则
             int youtype = 0; //右边次数
-            int xiajiangtypey = 0; //下降类型
             List<List<Integer>> youlist = new ArrayList();
             for (int i = zuixiaozhizb; i < array.size() - 1; i++) {
                 Integer houzhi = array.get(i + 1).get(2); //后值
                 Integer qianzhi = array.get(i).get(2); //前值
-                //Integer xiajiangzhiy = array.get(i+2).get(2); //下降值
-                Integer xiajiangzhiy = array.get(i + 1).get(2);
-                if (i < array.size() - 2) {
-                    xiajiangzhiy = array.get(i + 2).get(2); //下降值
-                }
 
                 if (houzhi - qianzhi >= 0 && qianzhi!=100) { //用后值-前值 右减左
                     if (youtype == 0) {
@@ -2559,7 +2339,6 @@ public class SleepResultUtil {
 
             int biaozhuny = 100;
             int hbzuobiaozy = 0; //合并左边坐标
-            int hbzuobiaoyy = 0; //右边坐标
             int youlisttype = 0;
             for (int l = 0; l <= youtype - r; l++) {
                 if (youtype > r) { //如果次数>4 合并完一次 找一次然后再重新找 直到<4
@@ -2568,7 +2347,6 @@ public class SleepResultUtil {
                         if (cha < biaozhuny) { //求最小值
                             biaozhuny = cha;
                             hbzuobiaozy = youlist.get(i).get(3);
-                            hbzuobiaoyy = hbzuobiaozy + 1;
                             youlisttype = i+1;
                         }
                     }
@@ -2602,13 +2380,9 @@ public class SleepResultUtil {
             array.get(i).set(1, array.get(i + 1).get(0));
         }
 
-        int ty = 1;
-        int shoutime = 0;
-        int weitime = 0;
-        int tytype = 0;
-        int zuobiaozhi = 0;
-        int time1 = 0;
-        int time2 = 0;
+        /*
+        * 爬坡完成后,进行小于S秒合并
+        * */
 
         int tys = 0;
         while (true) {
@@ -2625,20 +2399,10 @@ public class SleepResultUtil {
                     array.get(tys-1).set(2, array.get(tys).get(2));
                     array.remove(tys);
                 } else {
-                    int qian = array.get(tys-1).get(2);
-                    int xian = array.get(tys).get(2);
-                    int hou = array.get(tys+1).get(2);
-                    int qiancha = Math.abs(qian - xian);
-                    int houcha = Math.abs(hou - xian);
                     int duibi = tys;//对比值
-//                    if (qiancha<=houcha){//跟前值 删现值
-//                        array.get(tys-1).set(1, array.get(tys).get(1));
-//                        array.remove(tys);
-//                    }else {
                     array.get(tys).set(1, array.get(tys+1).get(1));
                     duibi = tys+1;
                     array.remove(tys+1);
-                    // }
                     for (int j = duibi; j < array.size(); j++) {
                         array.get(j).set(3, j);
                     }
@@ -2653,10 +2417,26 @@ public class SleepResultUtil {
         }
     }
 
-    private static void getHxwl(List<Integer> RR, Date date, List<List<Integer>> arrayhx, int h, int q, List<List<Integer>> hxwl, List<List<Object>> resultshxxl,List<Integer> PI) {
+    private static List<List<Integer>> getPaixu(List<List<Integer>> arraySort, int pxzb) {
+        arraySort = arraySort.stream().sorted((o1, o2) -> {
+            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
+                int c = Integer.valueOf(o1.get(pxzb)).compareTo(Integer.valueOf(o2.get(pxzb)));
+                if (c != 0) {
+                    return c;
+                }
+            }
+            return Integer.compare(o1.size(), o2.size());
+        }).collect(Collectors.toList());
+        return arraySort;
+    }
+
+    private static void getHxwl( List<List<Integer>> arrayhx, int h, int q, List<List<Integer>> hxwl) {
         List<List<Integer>> sort = getSort1(arrayhx);
-        for (int i = sort.size() - 1; i >= sort.size() - h && i >= 0; i--) {
-            //for (int i = 0; i <  sort.size(); i++) {
+        int size = sort.size()-h;
+        if (size<0){
+            size = 0;
+        }
+        for (int i = sort.size() - 1; i >= size; i--) {
             List<Integer> integers = sort.get(i);
             Integer hxz = integers.get(2); //呼吸值
             Integer xlz = integers.get(3); //心率值
@@ -2664,71 +2444,7 @@ public class SleepResultUtil {
                 hxwl.add(integers);
             }
         }
-
-
     }
-//    private static void shijianzhongshujihe(List<Integer> prList, List<Integer> RR, List<Integer> prListCopy, List<List<Integer>> arrlist3, List<List<Integer>> array, List<List<Integer>> arrayhx, List<Integer> PI) {
-//        long x1 = 0, x2 = 0, y1 = 0, y2 = 0;
-//        int arrzb = 0;
-//        for (List<Integer> integers : arrlist3) {
-//            List<Integer> fanwei = new ArrayList();
-//            List<Integer> huxixinlv = new ArrayList();
-//            int zuo = integers.get(0);  //循环出的list 左边为初坐标 右边为结束坐标
-//            int you = integers.get(1);
-//            int zysize = you - zuo;
-//
-//            int kai = 0;
-//            List<Integer> arrylisthx = new ArrayList<>(prList); //呼吸组
-//            List<Integer> arrylist1 = new ArrayList<>(prList);
-//            for (int h = zuo; h < you; h++) {
-//                if (h < 0) {
-//                    h = 0;
-//                }
-//                arrylist1.add(prListCopy.get(h));
-//                kai++;
-//                //呼吸
-//                //arrylisthx.add(RR.get(h));
-//                arrylisthx.add(PI.get(h));
-//            }
-//
-//            //第三部通过众数获得数组
-//            int[] arrylist1sz = arrylist1.stream().mapToInt(Integer::valueOf).toArray();
-//            ModeUtil m = new ModeUtil();
-//            int c;
-//            m.number = new int[arrylist1sz.length];
-//            m.Mode(arrylist1sz, 0, arrylist1sz.length);
-//            int y = m.number[0];
-//
-//            //形成数组 [[1591116380000, 49], [1591123995000, 49]]
-//            List<List<Long>> ercheng = new ArrayList<>();
-//            List<Long> objects1 = new ArrayList<>();
-//            objects1.add(x1);
-//            objects1.add(y1);
-//            List<Long> objects2 = new ArrayList<>();
-//            objects2.add(x2);
-//            objects2.add(y2);
-//            ercheng.add(objects1);
-//            ercheng.add(objects2);
-//
-//            fanwei.add(zuo);//获得初坐标
-//            fanwei.add(you);
-//            fanwei.add((int) y);
-//            fanwei.add(arrzb);
-//            array.add(fanwei);
-//            arrzb++;
-//
-//            //获得呼吸,心率方差组
-//            int[] arrylisthxfx = arrylisthx.stream().mapToInt(Integer::valueOf).toArray();
-//            int xinlvfc = Variance(arrylist1sz);
-//            int huxifc = Variance(arrylisthxfx); //huxixinlv
-//            huxixinlv.add(zuo);//获得初坐标
-//            huxixinlv.add(you);
-//            huxixinlv.add(huxifc);
-//            huxixinlv.add(xinlvfc);
-//            huxixinlv.add(arrzb);
-//            arrayhx.add(huxixinlv);
-//        }
-//    }
 
     private static void shijianzhongshujihe( List<Integer> RR, List<Integer> prListCopy, List<List<Integer>> arrlist3, List<List<Integer>> array, List<List<Integer>> arrayhx, List<Integer> PI,List<List<Integer>> list1) {
         long x1 = 0, x2 = 0, y1 = 0, y2 = 0;
@@ -2874,14 +2590,13 @@ public class SleepResultUtil {
         }
 
 
-        //System.out.println(hxlists); //获得呼吸方差分组
 
-        List<List<Integer>> arrlist2 = new ArrayList<>(list1); //呼吸方差对应时间
+        List<List<Integer>> arrlisthx = new ArrayList<>(list1); //呼吸方差对应时间
 
 
-        for (int j = 0; j < arrlist2.size(); j++) {
+        for (int j = 0; j < arrlisthx.size(); j++) {
             List<Integer> list = new ArrayList<>();
-            List<Integer> integers = arrlist2.get(j);
+            List<Integer> integers = arrlisthx.get(j);
             Integer integer = integers.get(0);
             if (integer < 0) {
                 integer = 0;
@@ -2898,7 +2613,7 @@ public class SleepResultUtil {
                 //if (i==0){
                 if (j == kaishisj) {
                     list.add(integer);
-                    list.add(arrlist2.get(jieshusj).get(1));
+                    list.add(arrlisthx.get(jieshusj).get(1));
                     arrlist3.add(list);
                     break;
                 } else if (j > kaishisj && j <= jieshusj) {
@@ -2929,15 +2644,6 @@ public class SleepResultUtil {
             arr[a] = i;
             a = a + 1;
         }
-
-        int xjshouzhi = 0;
-        int xjshouzhics = 0;
-        int xjcs = 1;
-        int xjweizhi = 0;
-        int ssshouzhi = 0;
-        int ssshouzhics = 0;
-        int sscs = 1;
-        int type = 0;
 
         //求得arr方差数组
         int chazhi = 0;
@@ -2985,12 +2691,10 @@ public class SleepResultUtil {
             }
         }
         //方差数组对比获得 区间坐标(差值的区间坐标,需转换成具体时间坐标)
-        //System.out.println(lists);
-
 
         List<List<Integer>> list1 = new ArrayList<>();
         for (int i = 0; i < lists.size(); i++) {
-            List<Integer> list12 = new ArrayList<>();
+            List<Integer> list = new ArrayList<>();
             List<Integer> integers = lists.get(i);
             int sz = integers.get(0) * d;
             int wz = integers.get(1) * d;
@@ -3003,24 +2707,23 @@ public class SleepResultUtil {
             }
             Integer integer = szzhi;
             Integer integer1 = timeThree.get(wz);
-            list12.add(integer);
-            list12.add(integer1);
-            list1.add(list12);
+            list.add(integer);
+            list.add(integer1);
+            list1.add(list);
         }
         //求得具体时间坐标 此时完成第一步获取7个方差 差值对比晒出来的坐标 接下来第二部寻找 对应呼吸频率
-        //System.out.println(list1); //求得时间数组
 
         for (int i = 0; i < list1.size(); i++) {
-            List<Integer> list22 = new ArrayList<>();
+            List<Integer> list = new ArrayList<>();
             List<Integer> integers = list1.get(i);
             Integer time1 = integers.get(0);
             Integer time2 = integers.get(1);
             for (int j = 0; j < PI.size(); j++) {
                 if (j >= time1 && j <= time2) {
-                    list22.add(PI.get(j));
+                    list.add(PI.get(j));
                 }
             }
-            huxiqujian.add(list22);
+            huxiqujian.add(list);
         }
         return list1;
     }
@@ -3078,7 +2781,7 @@ public class SleepResultUtil {
         return timeThree;
     }
 
-    private static void zerochuli(List<Integer> prList, List<Integer> prListCopy, List<List<Integer>> qujianlist) {
+    private static int zerochuli(List<Integer> prList, List<Integer> prListCopy, List<List<Integer>> qujianlist,int zerogs) {
         int lingkai = 0;
         int lingwei = 0;
         for (int i = 1; i < prList.size(); i++) {
@@ -3102,8 +2805,11 @@ public class SleepResultUtil {
                     qujianlist.add(list);
                     lingkai = 0;
                 }
+                zerogs ++ ;
             }
         }
+
+        zerogs = prList.size()-zerogs;
         //将为0的值给前值 list
         for (int i = 1; i < prList.size(); i++) {
             Integer integer = prList.get(i);
@@ -3114,13 +2820,13 @@ public class SleepResultUtil {
                 prListCopy.set(i, 100);
             }
         }
+        return zerogs;
     }
 
-    private static void xingchengqujian(List<Integer> prListCopy, List<List<Integer>> qujianlist, Date date, List<List<Integer>> listTime, List<List<Long>> results, List<Integer> prListCopy1, List<List<Object>> results2) {
+    private static void xingchengqujian(List<Integer> prListCopy, List<List<Integer>> qujianlist, Date date, List<List<Integer>> listTime,  List<Integer> prListCopy1, List<List<Object>> results2) {
             int integer = listTime.get(listTime.size()-1).get(2);
-            //int zuobiao = listTime.size();
             int zuobiao = prListCopy.size();
-            if (integer==100){
+            if (integer==100){//如果最后字段为100即空白区域,为了展示效果,则截断
                 zuobiao = listTime.get(listTime.size()-1).get(0)+1;
             }
 
@@ -3161,7 +2867,6 @@ public class SleepResultUtil {
                 }
             }
             results2.add(objects2);
-            results.add(objects);
         }
 
     }
@@ -3331,15 +3036,7 @@ public class SleepResultUtil {
     private static List<List<Integer>> getSort(List<List<Integer>> array) {
         List<List<Integer>> arraySort;//坐标合并后,重新取值
         arraySort = new ArrayList(array);
-        arraySort = arraySort.stream().sorted((o1, o2) -> {
-            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
-                int c = Integer.valueOf(o1.get(2)).compareTo(Integer.valueOf(o2.get(2)));
-                if (c != 0) {
-                    return c;
-                }
-            }
-            return Integer.compare(o1.size(), o2.size());
-        }).collect(Collectors.toList());
+        arraySort = getPaixu(arraySort, 2);
         //System.out.println(arraySort);
         return arraySort;
     }
