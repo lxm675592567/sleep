@@ -9,12 +9,9 @@ import com.hife.entity.SleepRecord;
 import com.hife.service.SleepService;
 import com.hife.util.GuidUtil;
 import com.hife.util.StringUtil;
-import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class SleepServiceImpl implements SleepService {
@@ -28,6 +25,10 @@ public class SleepServiceImpl implements SleepService {
         String cardId = jsonObject.getString("cardId");
         if (StringUtil.stringIsNotNull(cardId)) {
             queryDoc.put("cardId", cardId);
+        }
+        String phone = jsonObject.getString("phone");
+        if (StringUtil.stringIsNotNull(phone)) {
+            queryDoc.put("phone", phone);
         }
         PageParam pageParam = new PageParam(jsonObject.getInteger(PageParam.PAGE_SIZE),
                 jsonObject.getInteger(PageParam.PAGE_NUM));

@@ -505,7 +505,20 @@ public class SleepResultUtil {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = simpleDateFormat.parse(createTime);
 
-        qxList = getPaixus(qxList, 0);
+        if (listTime.size()<2){
+            JSONObject objects = getmysm();
+            return objects;
+        }
+
+        qxList = qxList.stream().sorted((o1, o2) -> {
+            for (int i = 0; i < Math.min(o1.size(), o2.size()); i++) {
+                int c = Integer.valueOf((Integer)o1.get(0)).compareTo(Integer.valueOf((Integer) o2.get(0)));
+                if (c != 0) {
+                    return c;
+                }
+            }
+            return Integer.compare(o1.size(), o2.size());
+        }).collect(Collectors.toList());
         /*
          * 睡眠计算
          * */
@@ -715,6 +728,69 @@ public class SleepResultUtil {
         object.put("AHI",AHI);//AHI
         object.put("ODI",oxygenThree);//ODI
         return object;
+    }
+
+    private static JSONObject getmysm() {
+//        //睡眠分析
+//        JSONObject smfxJson = new JSONObject();//睡眠分析
+//        smfxJson.put("createTime",createTime);//开始记录时间
+//        smfxJson.put("startSleep",startSleep);//入睡时间
+//        smfxJson.put("endSleep",endSleep);//最后睡眠时刻
+//        smfxJson.put("endTime",endTime);//记录结束时间
+//        smfxJson.put("zjlsjSleep",zjlsjSleep);//总记录时间
+//        smfxJson.put("smsjSleep",smsjSleep);//睡眠时间
+//        smfxJson.put("smzsjSleep",smzsjSleep);//睡眠总时间
+//        smfxJson.put("smxl",smxl);//睡眠效率
+//        smfxJson.put("smjxsj",smjxsj);//睡眠觉醒时间
+//        //睡眠清醒持续状态
+//        JSONObject cxztJson = new JSONObject();//睡眠/清醒持续状态
+//        cxztJson.put("qxSleep",qxSleep);//清醒
+//        cxztJson.put("qxzbSleep",qxzbSleep);//清醒占比
+//        cxztJson.put("smSleep",smSleep);//睡眠
+//        cxztJson.put("smzbSleep",smzbSleep);//睡眠占比
+//        cxztJson.put("smqfz",smqfz);//睡眠潜伏期
+//        cxztJson.put("jxcsSleep",jxcsSleep);//觉醒次数
+//
+//        //呼吸情况分析
+//        JSONObject hxqkfxJson = new JSONObject();//呼吸情况分析
+//        hxqkfxJson.put("hxsjzs",AHIlist.size());//呼吸事件总数
+//        hxqkfxJson.put("oxygenFour",oxygenFour);//氧减百分4事件
+//        hxqkfxJson.put("oxygenThree",oxygenThree);//氧减百分3事件
+//        hxqkfxJson.put("AHI",AHI);//AHI
+//        hxqkfxJson.put("hxzd",ahizuixiao);//呼吸最短
+//        hxqkfxJson.put("hxzc",ahizuida);//呼吸最长
+//        hxqkfxJson.put("hxpj",ahipingjun);//呼吸平均(秒)
+//
+//        //血氧饱和度分析
+//        JSONObject xybhdJson = getjibenshuzhi.getJSONObject("xybhdJson");
+//        //脉率分析
+//        JSONObject mlfxJson = getjibenshuzhi.getJSONObject("mlfxJson");
+//
+//        //睡眠清醒图
+//        JSONObject smqxJson = new JSONObject();
+//        smqxJson.put("qxzbSleep",qxzbSleep);//清醒占比
+//        smqxJson.put("smzbSleep",smzbSleep);//睡眠占比
+//
+//        //氧减持续时间次数图
+//        List<List<Object>> arrayyj = (List<List<Object>>)getjibenshuzhi.get("arrayyj"); //氧减持续时间次数图
+//
+//        //脉率直方图
+//        List<List<Object>> arraymlzf = (List<List<Object>>)getjibenshuzhi.get("arraymlzf"); //脉率直方图
+//
+//        JSONObject object = new JSONObject();
+//        object.put("smfx",smfxJson);//睡眠分析
+//        object.put("cxzt",cxztJson);//睡眠清醒持续状态
+//        object.put("hxqkfx",hxqkfxJson);//呼吸情况分析
+//        object.put("xybhdfx",xybhdJson);//血氧饱和度分析
+//        object.put("mlfx",mlfxJson);//脉率分析
+//        object.put("smqx",smqxJson);//睡眠清醒图
+//        object.put("arrayyj",arrayyj);//氧减持续时间次数图
+//        object.put("arraymlzf",arraymlzf);//脉率直方图
+//        object.put("AHI",AHI);//AHI
+//        object.put("ODI",oxygenThree);//ODI
+//        return new JSONObject();
+        JSONObject jsonObject = new JSONObject();
+        return jsonObject;
     }
 
     private static double miaozhuanfen(long smsj) {

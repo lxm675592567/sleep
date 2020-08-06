@@ -71,7 +71,6 @@ public class UploadServiceImpl implements UploadService {
         String fileName = file.getOriginalFilename();
         String filePath = HttpclientUtil.get("file.ImgUrl.post")+ separator;
         File dest = new File(filePath + fileName);
-        //String path = filePath + fileName;
         String pathUrl = HttpclientUtil.get("file.ImgUrl")   + separator + fileName;
         String path = filePath  + separator + fileName;
         try {

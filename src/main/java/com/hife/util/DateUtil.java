@@ -128,6 +128,16 @@ public class DateUtil {
         return jsonObject;
     }
 
+    public static JSONObject parseDateRanges(JSONArray daterange) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_FMT);
+        JSONObject jsonObject = new JSONObject();
+        String startStr = daterange.getString(0);
+        String endStr = daterange.getString(1);
+        jsonObject.fluentPut("$gte", startStr)
+                .fluentPut("$lte", endStr);
+        return jsonObject;
+    }
+
     /**
      * 年龄详情类
      */
