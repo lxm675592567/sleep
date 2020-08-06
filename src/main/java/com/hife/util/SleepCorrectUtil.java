@@ -304,7 +304,8 @@ public class SleepCorrectUtil {
         for (int i = smkbList.size() - 1; i >= 0; i--) {//最后空白不加
             List<Object> objects = smkbList.get(i);
             long hou = (long) objects.get(1);
-            if (hou != size) {
+            int zhi = (int) objects.get(2);
+            if (hou != size && zhi !=100) {
                 arraySort.add(objects);
             }
         }
