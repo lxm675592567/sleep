@@ -2086,12 +2086,6 @@ public class SleepResultUtil {
                     css = 1;
                 } else {
                     css++;
-                    if (i==pingjunshu.length-1){
-                        jieshupj = css + kaishipj;
-                        list.add(kaishipj);
-                        list.add(jieshupj);
-                        resultList.add(list);
-                    }
                 }
             } else { //判断前值是否小于0 若小于0
                 if (i > 1) {
