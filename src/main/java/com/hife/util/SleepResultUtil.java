@@ -1896,7 +1896,6 @@ public class SleepResultUtil {
                         }else {
                             shushuiList.get(i).remove(j);
                         }
-
                     }
                 }
             }
@@ -1922,7 +1921,6 @@ public class SleepResultUtil {
                 if (type==1){
                     break;
                 }
-
             }
         }
     }
@@ -2139,7 +2137,16 @@ public class SleepResultUtil {
             ss.add(zhi);
             listTime.add(ss);
         }
-
+        if (listTime.size()==0){
+            for (int i = 0; i < array.size(); i++) {
+                List<Integer> lt = new ArrayList<>();
+                List<Integer> integers = array.get(i);
+                lt.add(integers.get(0));
+                lt.add(integers.get(1));
+                lt.add(integers.get(2));
+                listTime.add(lt);
+            }
+        }
         int integer = listTime.get(listTime.size() - 1).get(1);
         List<Integer> arrylist = new ArrayList<>();
         for (int i = integer; i < prListCopy.size(); i++) {
@@ -2161,6 +2168,7 @@ public class SleepResultUtil {
             list.add(y);
             listTime.add(list);
         }
+
     }
 
     private static double getpingjun(List<Integer> prList, List<Integer> prListCopy, List<Integer> prListCopys) {
@@ -3004,14 +3012,10 @@ public class SleepResultUtil {
                     xjtype++;
                 } else {
                     xjjieshu = xjkai + xjtype;
-//                    if (){
-//
-//                    }
                     list.add(xjkai);
                     list.add(xjjieshu);
                     xjtype = 1;
                     smresultsList.add(list);
-                    // i ++;
                 }
             }
             if (i == listTime.size() - 2) {
@@ -3019,7 +3023,6 @@ public class SleepResultUtil {
                 if (ssjieshu > xjjieshu) {
                     jieshus = ssjieshu;
                 }
-                // list11.add(i-1);
                 list11.add(jieshus);
                 list11.add(listTime.size() - 1);
                 xjtype = 1;

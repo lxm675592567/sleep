@@ -193,7 +193,6 @@ public class SleepCorrectUtil {
                 }).collect(Collectors.toList());
                 sleephf.remove(i);
             }
-
         }
         //每段里面集合加上坐标
         for (int i = 0; i < sleephf.size(); i++) {
@@ -244,10 +243,10 @@ public class SleepCorrectUtil {
              * 形成最后结果
              * */
             JSONObject smlxNew = new JSONObject();
-            List<List<Object>> smjg = getSmjg(size, ts, smList, smhxwlList, smkbList);
+           // List<List<Object>> smjg = getSmjg(size, ts, smList, smhxwlList, smkbList);
 
             smlxNew.put("xl", xl);
-            smlxNew.put("qt", smjg);
+            smlxNew.put("qt", qt);
 
             return smlxNew;
         }
@@ -345,7 +344,6 @@ public class SleepCorrectUtil {
         /*合并
          *一先获得清醒集合
          * 二清醒集合左右判断小于10分钟并且中间不能有深睡合并一数组中
-         *
          * */
         List<List<Object>> kuaidongLs = new ArrayList<>();//一先获得清醒集合
         for (int i = 0; i < smList.size(); i++) {
