@@ -78,7 +78,7 @@ public class UploadServiceImpl implements UploadService {
         /*json.put("sleepId", "eeb7cec06a4445f1ba8faadfef94f531");
         json.put("datUrl", "D:/file/dat/黄智.dat");*/
         json.put("sleepId", record.getSleepId());
-        json.put("datUrl", record.getDatUrl());
+        json.put("datUrl", record.getUrl());
         com.alibaba.fastjson.JSONObject sleepBasicValue = edfService.getSleepBasicValue(json);
         com.alibaba.fastjson.JSONObject cszt = sleepBasicValue.getJSONObject("cszt");
         double smSleep = sleepBasicValue.getJSONObject("cxzt").getDouble("smSleep");
