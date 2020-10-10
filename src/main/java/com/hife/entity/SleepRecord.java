@@ -132,4 +132,9 @@ public class SleepRecord {
      * 医生建议
      */
     private String doctorAdvice;
+
+    /**
+     * tenant_id
+     */
+    private String tenant_id;
 }

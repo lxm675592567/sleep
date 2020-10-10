@@ -7,6 +7,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -64,7 +65,7 @@ public class UploadController {
      * }
      */
     @PostMapping("/SaveDatValue")
-    public String SaveDatValue(@RequestBody SleepRecord record) throws ParseException {
+    public String SaveDatValue(@RequestBody SleepRecord record) throws ParseException, JSONException {
          return uploadService.SaveDatValue(record);
     }
 
