@@ -30,6 +30,10 @@ public class SleepServiceImpl implements SleepService {
         if (StringUtil.stringIsNotNull(phone)) {
             queryDoc.put("phone", phone);
         }
+        String tenantId = jsonObject.getString("tenantId");
+        if (StringUtil.stringIsNotNull(tenantId)) {
+            queryDoc.put("tenant_id", tenantId);
+        }
         PageParam pageParam = new PageParam(jsonObject.getInteger(PageParam.PAGE_SIZE),
                 jsonObject.getInteger(PageParam.PAGE_NUM));
 
