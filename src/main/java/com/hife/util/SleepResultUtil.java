@@ -392,9 +392,9 @@ public class SleepResultUtil {
         }
         for (int i = 0; i < xlList.size(); i++) {//心率
             List<Object> list = new ArrayList<>();
-            int qian =  (int) xlList.get(i).get(0) ;
-            int hou =  (int) xlList.get(i).get(1) ;
-            int zhi =  (int) xlList.get(i).get(2) ;
+            int qian =  (int) xlList.get(i).get(0);
+            int hou =  (int) xlList.get(i).get(1);
+            int zhi =  (int) xlList.get(i).get(2);
             list.add(ts + qian * 1000);
             list.add(ts + hou * 1000);
             list.add(zhi);
@@ -538,7 +538,12 @@ public class SleepResultUtil {
 
         //结束入睡时间
         //Integer qxend = (Integer) qxList.get(qxList.size() - 1).get(0);
+        Integer smlxType = listTime.get(listTime.size() - 1).get(4);
         Integer ltend = listTime.get(listTime.size() - 1).get(0);
+        if (smlxType!=2){
+            ltend = listTime.get(listTime.size() - 1).get(1);
+        }
+
         long sendTimes = ltend;
         //结束入睡下降上升勿删
 //        if (qxend!=ltend){
@@ -1795,9 +1800,7 @@ public class SleepResultUtil {
                 int qingxingzhi = (int) qingxing.get(j).get(2);
                 int qingxinghouzbzhi = (int) qingxing.get(j).get(3);
 
-                //先判断左边
-
-                //再判断右边
+                //判断右边
                 int ytype = 0;
                 if (qingxingqianzhi>=zuiyuohbiao && (listTimesm.size()-1)-qingxinghouzbzhi>=qxcs ){
                     //将第一个清醒值取出左右对比 先对比右边 先判断右边是否>3
@@ -2288,7 +2291,7 @@ public class SleepResultUtil {
                         for (int i = 1; i < array.size(); i++) {
                             array.get(i).set(3, array.get(i).get(3) - 1);
                         }
-                    } else if (zuixiaozhizb == array.size() - 1) { //
+                    } else if (zuixiaozhizb == array.size() - 1) {
                         array.get(array.size() - 1).set(0, array.get(array.size() - 2).get(0));
                         array.remove(array.size() - 1);
                     } else {
@@ -2383,7 +2386,7 @@ public class SleepResultUtil {
                         for (int i = 1; i < array.size(); i++) {
                             array.get(i).set(3, array.get(i).get(3) - 1);
                         }
-                    } else if (zuixiaozhizb == array.size() - 1) { //
+                    } else if (zuixiaozhizb == array.size() - 1) {
                         array.get(array.size() - 1).set(0, array.get(array.size() - 2).get(0));
                         array.remove(array.size() - 1);
                     } else {
@@ -2730,7 +2733,7 @@ public class SleepResultUtil {
         int jieshu = 0;
         int cs = 0;
 
-        //参数E:第一次方差合并对比7个数一个方差 前值-后值<E
+        //参数E:第一次方差合并对比60个数一个方差 前值-后值<E 目前E==0相当于不合并
         for (int i = 1; i < arr.length; i++) {
             List<Integer> list = new ArrayList<>();
             chazhi = Math.abs(arr[i] - arr[i - 1]);
@@ -2796,10 +2799,11 @@ public class SleepResultUtil {
             List<Integer> integers = list1.get(i);
             Integer time1 = integers.get(0);
             Integer time2 = integers.get(1);
-            for (int j = 0; j < PI.size(); j++) {
-                if (j >= time1 && j <= time2) {
+            /*if (time1!=0){
+                time1++;
+            }*/
+            for (int j = time1; j <= time2; j++) {
                     list.add(PI.get(j));
-                }
             }
             huxiqujian.add(list);
         }
