@@ -96,7 +96,7 @@ public class SleepUtil {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = simpleDateFormat.parse(time.getString("createTime"));
         List<List<Long>> list = new ArrayList<>();
-        for (int i = 0; i <kbzhi; i++) {
+        for (int i = 0; i <=kbzhi; i++) {
             List<Long> objects = new ArrayList<>();
             long ts = date.getTime();
             if (i == 0){
@@ -147,7 +147,7 @@ public class SleepUtil {
             }
             short[] PDR = record.BreathWave;
             for (int i : PDR) {
-                if (pdrtype > (records.size()-1)*2) {
+                if (pdrtype >= (records.size())*2) {
                     break;
                 }
                 PDRList.add(i);
@@ -161,7 +161,7 @@ public class SleepUtil {
         for (int i = prList.size()-1; i >= 0; i--) {
             int integer = prList.get(i);
             if (integer!=0){
-                kbzhi = i;
+                kbzhi = i+1;
                 break;
             }
         }
