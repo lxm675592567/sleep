@@ -1,6 +1,5 @@
 package com.hife.service.impl;
 
-import com.hife.EDFUtils.EDFRecord;
 import com.hife.dao.SleepMapper;
 import com.hife.dao.UploadMapper;
 import com.hife.entity.SleepRecord;
@@ -15,14 +14,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import sun.misc.BASE64Encoder;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import static javax.xml.crypto.dsig.Transform.BASE64;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -43,7 +46,7 @@ public class UploadServiceImpl implements UploadService {
     }
 
     @Override
-    public String SaveDatValue(SleepRecord record) throws ParseException, JSONException {
+    public String SaveDatValue(SleepRecord record) throws Exception {
         List<String> datUrl = record.getDatUrl();
         for (String s : datUrl) {
             record.setSleepId(CommUtil.getGuid()); //生成主键
@@ -68,18 +71,22 @@ public class UploadServiceImpl implements UploadService {
             }
             record.setDatUrl(null);
             uploadMapper.SaveDatValue(record);
-            updateData(record);
+            //智能手环传平台
+            com.alibaba.fastjson.JSONObject jsonObject = updateData(record);
+            //数据传递睡力铺
+            slpData(jsonObject);
         }
         return "200";
     }
 
-    public void updateData(SleepRecord record) throws ParseException, JSONException {
+    public com.alibaba.fastjson.JSONObject updateData(SleepRecord record) throws ParseException, JSONException {
         com.alibaba.fastjson.JSONObject json = new com.alibaba.fastjson.JSONObject();
         /*json.put("sleepId", "eeb7cec06a4445f1ba8faadfef94f531");
         json.put("datUrl", "D:/file/dat/黄智.dat");*/
         json.put("sleepId", record.getSleepId());
         json.put("datUrl", record.getUrl());
         com.alibaba.fastjson.JSONObject sleepBasicValue = edfService.getSleepBasicValue(json);
+        com.alibaba.fastjson.JSONObject sleepDataMap = edfService.getSleepDataMap(json);
         com.alibaba.fastjson.JSONObject cszt = sleepBasicValue.getJSONObject("cszt");
         double smSleep = sleepBasicValue.getJSONObject("cxzt").getDouble("smSleep");
         JSONObject jsonObject = new JSONObject();
@@ -90,16 +97,43 @@ public class UploadServiceImpl implements UploadService {
         eventData.put("bgdname", "智能手环");
         eventData.put("dataGuid", CommUtil.getGuid());
         eventData.put("data", jsonObject);
-        //String key = "tenant_id", tenantId = data.has(key) ? data.getString(key) : SecureUtil.getTenantId();
-        //System.out.println(eventData.toString());
         try {
             CommUtil.doPost(HttpclientUtil.get("file.upDevicData")+ "?tenantId=" + record.getTenant_id(), eventData.toString());
         } catch (Exception e) {
             e.printStackTrace();
         }
+       /* sleepBasicValue.putAll(sleepDataMap);
+        sleepBasicValue.remove("results");sleepBasicValue.remove("smlxResult");sleepBasicValue.remove("xlResult");*/
+        sleepBasicValue.put("piResult",(List<Integer>) sleepDataMap.get("piResult"));
+        sleepBasicValue.put("prResult",(List<Integer>) sleepDataMap.get("prResult"));
+        sleepBasicValue.put("rrResult",(List<Integer>) sleepDataMap.get("rrResult"));
+        sleepBasicValue.put("xyResult",(List<Integer>) sleepDataMap.get("xyResult"));
+        sleepBasicValue.put("pdrResult",(List<Integer>) sleepDataMap.get("pdrResult"));
+        return sleepBasicValue;
     }
 
+    public void slpData(com.alibaba.fastjson.JSONObject json) throws Exception {
+        BASE64Encoder encoder=new BASE64Encoder();
+        String data = encoder.encode(CommUtil.getGuid().getBytes());
+        com.alibaba.fastjson.JSONObject base64 = new com.alibaba.fastjson.JSONObject();
+        base64.put("base64", data);
 
+        JSONObject jsonObject = CommUtil.doPost(HttpclientUtil.get("file.slpbgdData")+ "?type=" + "bracelet", base64.toString());
+        if (jsonObject.getBoolean("success")){
+            String datId = jsonObject.getString("data");
+            json.put("datId",datId);
+            System.out.println(json.toString());
+             new Thread(() -> {
+                try {
+                    JSONObject jo =CommUtil.doPost(HttpclientUtil.get("file.slpData"), json.toString());
+                    System.out.println(jo);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+
+        }
+    }
 
     private String update(MultipartFile file) {
         if (file.isEmpty()) {

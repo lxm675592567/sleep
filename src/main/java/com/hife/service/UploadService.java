@@ -12,5 +12,5 @@ public interface UploadService {
 
     String getDat(MultipartFile file) throws ParseException;
 
-    String SaveDatValue(SleepRecord record) throws ParseException, JSONException;
+    String SaveDatValue(SleepRecord record) throws Exception;
 }

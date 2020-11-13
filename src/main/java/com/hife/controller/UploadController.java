@@ -65,7 +65,7 @@ public class UploadController {
      * }
      */
     @PostMapping("/SaveDatValue")
-    public String SaveDatValue(@RequestBody SleepRecord record) throws ParseException, JSONException {
+    public String SaveDatValue(@RequestBody SleepRecord record) throws Exception {
          return uploadService.SaveDatValue(record);
     }
 
