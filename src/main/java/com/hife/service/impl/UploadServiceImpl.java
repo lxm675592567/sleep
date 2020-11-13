@@ -122,7 +122,7 @@ public class UploadServiceImpl implements UploadService {
         if (jsonObject.getBoolean("success")){
             String datId = jsonObject.getString("data");
             json.put("datId",datId);
-            System.out.println(json.toString());
+            /*System.out.println(json.toString());*/
              new Thread(() -> {
                 try {
                     JSONObject jo =CommUtil.doPost(HttpclientUtil.get("file.slpData"), json.toString());
