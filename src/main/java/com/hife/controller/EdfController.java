@@ -1,6 +1,7 @@
 package com.hife.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.hife.base.ResultVO;
 import com.hife.service.EdfService;
 import com.hife.util.SleepUtil;
 import org.json.JSONException;
@@ -132,6 +133,22 @@ public class EdfController {
     @PostMapping(value = "/getSleepDataMap")
     public JSONObject getSleepDataMap(@RequestBody JSONObject jsonObject) throws ParseException, JSONException {
         return edfService.getSleepDataMap(jsonObject);
+    }
+
+
+    /**
+     * @api {Get} sleepAnalysis/edf/deleteSleepAdvice deleteSleepAdvice
+     * @apiGroup 删除手表数据接口
+     * @apiDescription 删除手表数据接口
+     * @apiParam {String} daId 医生建议id
+     * @apiParamExample {json} 传参示例
+     * http://10.10.10.90:8088/sleepAnalysis/edf/deleteSleepAdvice?daId=1278970377971195904
+     *  @apiSuccessExample  {json} 返回值示例
+     * {"success":true,"message":"操作成功","resultData":0}
+     */
+    @GetMapping(value = "deleteSleepAdvice")
+    public ResultVO<Long> deleteSleepAdvice(@RequestParam(value = "sleepId") String sleepId) {
+        return new ResultVO<>(this.edfService.deleteSleepAdvice(sleepId));
     }
 
 }

@@ -9,6 +9,7 @@ import com.hife.util.EdfUtil;
 import com.hife.util.SleepResultUtil;
 import com.hife.util.SleepUtil;
 import com.hife.util.StringUtil;
+import org.bson.Document;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,6 +122,12 @@ public class EdfServiceImpl implements EdfService {
 //        System.out.println("smlxResult"+smlxResult);
 
         return object;
+    }
+
+    @Override
+    public long deleteSleepAdvice(String sleepId) {
+        Document queryDoc = new Document("sleepId", sleepId);
+        return this.sleepMapper.deleteSleepAdvice(queryDoc);
     }
 
 

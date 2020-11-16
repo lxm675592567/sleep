@@ -21,5 +21,7 @@ public interface EdfService {
     JSONObject getSleepBasicValue(JSONObject jsonObject) throws ParseException, JSONException;
 
     JSONObject getSleepDataMap(JSONObject jsonObject) throws ParseException, JSONException;
+
+    long deleteSleepAdvice(String sleepId);
 }
 

@@ -21,4 +21,6 @@ public interface SleepMapper {
     DoctorAdvice saveDoctorAdvice(DoctorAdvice doctorAdvice);
 
     long deleteDoctorAdvice(Document queryDoc);
+
+    long deleteSleepAdvice(Document queryDoc);
 }

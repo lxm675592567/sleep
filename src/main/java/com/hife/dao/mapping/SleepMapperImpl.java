@@ -67,4 +67,9 @@ public class SleepMapperImpl extends BaseMapper implements SleepMapper {
     public long deleteDoctorAdvice(Document queryDoc) {
         return this.mongoTemplate.remove(new BasicQuery(queryDoc), DoctorAdvice.class).getDeletedCount();
     }
+
+    @Override
+    public long deleteSleepAdvice(Document queryDoc) {
+        return this.mongoTemplate.remove(new BasicQuery(queryDoc), SleepRecord.class).getDeletedCount();
+    }
 }
