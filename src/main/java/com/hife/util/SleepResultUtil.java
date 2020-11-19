@@ -22,8 +22,8 @@ public class SleepResultUtil {
 
     public static JSONObject getSleepResult(JSONObject json) throws ParseException {
         List<Integer> prList = (List<Integer>) json.get("prList");
-        List<Integer> RR = (List<Integer>) json.get("RR");
-        List<Integer> PI = (List<Integer>) json.get("PI");
+        List<Integer> rrList = (List<Integer>) json.get("rrList");
+        List<Integer> piList = (List<Integer>) json.get("piList");
         String createTime = json.getJSONObject("time").getString("createTime");
         String endTime = json.getJSONObject("time").getString("endTime");
 
@@ -71,7 +71,7 @@ public class SleepResultUtil {
          * 二 获得方差数组组成arr方差 ,并合并为list1(相等合并第一次合并)
          * */
         int[] arr = new int[slp.size()];
-        List<List<Integer>> list1 = huxifangchashuzu(RR, D, E, slp, timeThree, huxiqujian, arr,PI);
+        List<List<Integer>> list1 = huxifangchashuzu(rrList, D, E, slp, timeThree, huxiqujian, arr,piList);
 
         /*
          * 三 hxlists为呼吸方差值数组 arrlist3为合并时间区间数组(相等合并第二次合并,取消<5合并)
@@ -85,7 +85,7 @@ public class SleepResultUtil {
          * */
         List<List<Integer>> array = new ArrayList(); //心率众数组
         List<List<Integer>> arrayhx = new ArrayList(); //呼吸心率方差组
-        shijianzhongshujihe( RR, PrListCopy, arrlist3, array, arrayhx,PI,list1);
+        shijianzhongshujihe( rrList, PrListCopy, arrlist3, array, arrayhx,piList,list1);
         //shijianzhongshujihe(prList, RR, PrListCopy, arrlist3, array, arrayhx,PI);
 
         //最终结果带0
@@ -196,7 +196,7 @@ public class SleepResultUtil {
         //清醒 qingxingList  熟睡 ssList  浅睡qsList  中度熟睡 zdssList
         //七 求得方差众数 原始数组15个一组取得方差,然后再取得众数(中数) 心率和呼吸相加
         List<List<Integer>> tdList = new ArrayList<>(); //体动
-        GetTiDong getTiDong = new GetTiDong(PI, PrListCopys, arrayhx, tdList).invoke();
+        GetTiDong getTiDong = new GetTiDong(piList, PrListCopys, arrayhx, tdList).invoke();
 
         //九 判断清醒快速眼动 list中有值则为清醒 快速眼动值为5
         List<List<Object>> qxList = new ArrayList<>();//清醒
@@ -2023,49 +2023,6 @@ public class SleepResultUtil {
                 break;
             }
         }
-    }
-
-
-    private static void getfuzhi(List<EDFRecord> records, List<Integer> prList, List<Integer> RR, List<Integer> PI) {
-        for (EDFRecord record : records) {
-            short[] hr = record.HR;
-            for (int i : hr) {
-                if (i <= 250) {
-                    prList.add(i);
-
-                } else {
-                    prList.add(0);
-                }
-            }
-            short[] rr = record.PI;
-            for (int i : rr) {
-                if (i < 100) {
-                    RR.add(i);
-
-                } else {
-                    RR.add(0);
-                }
-            }
-            short[] pi = record.AccelarX;
-            for (int i = 0; i < 2; i++) {
-                int zhi = pi[i];
-                PI.add(zhi);
-            }
-
-        }
-        prList.set(0, 100);
-    }
-
-    private static String getTime(HashMap<String, String> header, List<EDFRecord> records) throws ParseException {
-        String startTime = header.get("记录的开始时间*").replace(".", ":");//时分秒 14.50.52
-        String startDate = header.get("记录的开始日期*").replace(".", ":");//日期 11.01.20
-        String[] strArr = startDate.split("\\:");
-        String time = "20" + strArr[2] + "-" + strArr[1] + "-" + strArr[0];
-        int miao = records.size() * 2; //睡眠总秒数
-        int minute = miao / 60 % 60; //睡眠时间转换成分钟
-        String createTime = time + " " + startTime;//开始时间 startDate=2020-01-11 15:09:52
-        String endTime = getEndTime(createTime, minute);//结束时间
-        return createTime;
     }
 
     private static void getHebin(List<Integer> prListCopy, int n, List<List<Integer>> array,  int[] pingjunshu,  List<List<Integer>> listTime) {

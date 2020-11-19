@@ -69,12 +69,12 @@ public class EdfServiceImpl implements EdfService {
         JSONObject readFile = SleepUtil.getReadFile(jsonObject);//获得原始数据
         List<EDFRecord> records = (List<EDFRecord>) readFile.get("records");
         JSONObject time = readFile.getJSONObject("time");
-        List<Integer> RR = (List<Integer>) readFile.get("RR");
+        List<Integer> rrList = (List<Integer>) readFile.get("rrList");
         JSONObject sleepResult = SleepResultUtil.getSleepResult(readFile);
         List<Integer> prListCopy = (List<Integer>) sleepResult.get("prListCopy");
         List<List<Object>> qxList = (List<List<Object>>) sleepResult.get("qxList");
         List<List<Integer>> listTime = (List<List<Integer>>) sleepResult.get("listTime");
-        JSONObject jcszjs = SleepResultUtil.getJcszjs(records, time, RR, prListCopy, listTime, qxList);
+        JSONObject jcszjs = SleepResultUtil.getJcszjs(records, time, rrList, prListCopy, listTime, qxList);
         jcszjs.put("sleepRecord",sleepRecord);
         jcszjs.put("BMI",sleepRecord.getBMI());
         jcszjs.put("spozx",readFile.getString("spozx"));

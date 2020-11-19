@@ -34,29 +34,28 @@ public class SleepUtil {
 
         List<Integer> prList = new ArrayList<>();//心率原始数据
         List<Integer> SPOList = new ArrayList<>();//血氧原始数据
-        List<Integer> RR = new ArrayList<>(); //呼吸原始数据
-        List<Integer> PI = new ArrayList<>(); //搏动指数原始数据
+        List<Integer> rrList = new ArrayList<>(); //呼吸原始数据
+        List<Integer> piList = new ArrayList<>(); //搏动指数原始数据
         List<Integer> PDRList = new ArrayList<>(); //呼吸波原始数据
 
         //此循环遍历原始数据并赋值PrList
-        int kbzhi = getfuzhi(records, prList, RR, PI, SPOList, PDRList);
+        int kbzhi = getfuzhi(records, prList, rrList, piList, SPOList, PDRList);
         List<List<Long>> xyResult =  getyuanshi(time, SPOList, kbzhi);//血氧
         List<List<Long>> prResult = getyuanshi(time, prList, kbzhi);//脉率
-        List<List<Long>> piResult = getyuanshi(time, PI, kbzhi);//搏动指数
-        List<List<Long>> rrResult = getyuanshi(time, RR, kbzhi);//呼吸
+        List<List<Long>> piResult = getyuanshi(time, piList, kbzhi);//搏动指数
+        List<List<Long>> rrResult = getyuanshi(time, rrList, kbzhi);//呼吸
         List<List<Long>> pdrResult = getyuanshi(time, PDRList, kbzhi);//呼吸波
 
-         //持续时长>=5分钟的最低血氧值
+        //持续时长>=5分钟的最低血氧值
         String spozx = getZdxy(SPOList);
-
 
         JSONObject object = new JSONObject();
         object.put("prList",prList);//
         object.put("SPOList",SPOList);//
-        object.put("PI",RR);//搏动指数改为呼吸
+        object.put("piList",rrList);//搏动指数改为呼吸
+        object.put("rrList",rrList);//呼吸
         object.put("xyResult",xyResult);//血氧
         object.put("prResult",prResult);//脉率
-        object.put("RR",RR);//呼吸
         object.put("piResult",piResult);//搏动指数
         object.put("rrResult",rrResult);//呼吸
         object.put("pdrResult",pdrResult);//呼吸波
