@@ -33,10 +33,13 @@ import static javax.xml.crypto.dsig.Transform.BASE64;
 public class UploadServiceImpl implements UploadService {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadServiceImpl.class);
 
+    @Autowired
     private final UploadMapper uploadMapper;
 
+    @Autowired
     private final SleepMapper sleepMapper;
 
+    @Autowired
     private final EdfService edfService;
 
     private static String separator = "/";
@@ -73,7 +76,7 @@ public class UploadServiceImpl implements UploadService {
                 }
                 record.setBMI(bmi);
             }
-            record.setDatUrl(null);
+
             uploadMapper.SaveDatValue(record);
             //智能手环传平台
             com.alibaba.fastjson.JSONObject jsonObject = updateData(record);
@@ -127,7 +130,6 @@ public class UploadServiceImpl implements UploadService {
         com.alibaba.fastjson.JSONObject base64 = new com.alibaba.fastjson.JSONObject();
         String data = encodeBase64File(url).replaceAll("(\\\r\\\n|\\\r|\\\n|\\\n\\\r)", "");
         base64.put("base64", data);
-        System.out.println(base64);
         JSONObject jsonObject = CommUtil.doPost(HttpclientUtil.get("file.slpbgdData")+ "?type=" + "bracelet", base64.toString());
         if (jsonObject.getBoolean("success")){
             String datId = jsonObject.getString("data");
