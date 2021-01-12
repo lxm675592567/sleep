@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import sun.misc.BASE64Encoder;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -47,6 +48,9 @@ public class UploadServiceImpl implements UploadService {
 
     @Override
     public String SaveDatValue(SleepRecord record) throws Exception {
+        if(record.getPhone() == null || record.getPhone().equals("")){
+                   return null;
+        }
         List<String> datUrl = record.getDatUrl();
         for (String s : datUrl) {
             record.setSleepId(CommUtil.getGuid()); //生成主键
@@ -74,7 +78,7 @@ public class UploadServiceImpl implements UploadService {
             //智能手环传平台
             com.alibaba.fastjson.JSONObject jsonObject = updateData(record);
             //数据传递睡力铺
-            slpData(jsonObject);
+            slpData(jsonObject,record.getUrl());
         }
         return "200";
     }
@@ -112,12 +116,18 @@ public class UploadServiceImpl implements UploadService {
         return sleepBasicValue;
     }
 
-    public void slpData(com.alibaba.fastjson.JSONObject json) throws Exception {
-        BASE64Encoder encoder=new BASE64Encoder();
+    public void slpData(com.alibaba.fastjson.JSONObject json,String url) throws Exception {
+        /*BASE64Encoder encoder=new BASE64Encoder();
         String data = encoder.encode(CommUtil.getGuid().getBytes());
         com.alibaba.fastjson.JSONObject base64 = new com.alibaba.fastjson.JSONObject();
+        base64.put("base64", data);*/
+        if (url == null || url.isEmpty()){
+            return;
+        }
+        com.alibaba.fastjson.JSONObject base64 = new com.alibaba.fastjson.JSONObject();
+        String data = encodeBase64File(url).replaceAll("(\\\r\\\n|\\\r|\\\n|\\\n\\\r)", "");
         base64.put("base64", data);
-
+        System.out.println(base64);
         JSONObject jsonObject = CommUtil.doPost(HttpclientUtil.get("file.slpbgdData")+ "?type=" + "bracelet", base64.toString());
         if (jsonObject.getBoolean("success")){
             String datId = jsonObject.getString("data");
@@ -152,5 +162,21 @@ public class UploadServiceImpl implements UploadService {
             LOGGER.error(e.toString(), e);
         }
         return pathUrl;
+    }
+
+    /**
+     * 将文件转成base64 字符串
+     *
+     * @param path文件路径
+     * @return *
+     * @throws Exception
+     */
+    public static String encodeBase64File(String path) throws Exception {
+        File file = new File(path);
+        FileInputStream inputFile = new FileInputStream(file);
+        byte[] buffer = new byte[(int) file.length()];
+        inputFile.read(buffer);
+        inputFile.close();
+        return new BASE64Encoder().encode(buffer);
     }
 }
