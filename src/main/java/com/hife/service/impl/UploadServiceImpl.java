@@ -92,7 +92,10 @@ public class UploadServiceImpl implements UploadService {
         com.alibaba.fastjson.JSONObject sleepBasicValue = edfService.getSleepBasicValue(json);
         com.alibaba.fastjson.JSONObject sleepDataMap = edfService.getSleepDataMap(json);
         com.alibaba.fastjson.JSONObject cszt = sleepBasicValue.getJSONObject("cszt");
-        double smSleep = sleepBasicValue.getJSONObject("cxzt").getDouble("smSleep");
+        double smSleep = 0;
+        if (cszt != null && !cszt.isEmpty()){
+            smSleep = cszt.getDouble("smSleep");
+        }
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("smSleep",smSleep);
         net.sf.json.JSONObject eventData = new JSONObject();
