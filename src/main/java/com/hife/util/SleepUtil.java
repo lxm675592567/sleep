@@ -33,27 +33,28 @@ public class SleepUtil {
         //如果通过开始时间结束时间则截取 list = list.subList(0, 10);
 
         List<Integer> prList = new ArrayList<>();//心率原始数据
-        List<Integer> SPOList = new ArrayList<>();//血氧原始数据
+        List<Integer> spoList = new ArrayList<>();//血氧原始数据
         List<Integer> rrList = new ArrayList<>(); //呼吸原始数据
         List<Integer> piList = new ArrayList<>(); //搏动指数原始数据
-        List<Integer> PDRList = new ArrayList<>(); //呼吸波原始数据
+        List<Integer> pdrList = new ArrayList<>(); //呼吸波原始数据
 
         //此循环遍历原始数据并赋值PrList
-        int kbzhi = getfuzhi(records, prList, rrList, piList, SPOList, PDRList);
-        List<List<Long>> xyResult =  getyuanshi(time, SPOList, kbzhi);//血氧
+        int kbzhi = getfuzhi(records, prList, rrList, piList, spoList, pdrList);
+        List<List<Long>> xyResult =  getyuanshi(time, spoList, kbzhi);//血氧
         List<List<Long>> prResult = getyuanshi(time, prList, kbzhi);//脉率
         List<List<Long>> piResult = getyuanshi(time, piList, kbzhi);//搏动指数
         List<List<Long>> rrResult = getyuanshi(time, rrList, kbzhi);//呼吸
-        List<List<Long>> pdrResult = getyuanshi(time, PDRList, kbzhi);//呼吸波
+        List<List<Long>> pdrResult = getyuanshi(time, pdrList, kbzhi);//呼吸波
 
         //持续时长>=5分钟的最低血氧值
-        String spozx = getZdxy(SPOList);
+        String spozx = getZdxy(spoList);
 
         JSONObject object = new JSONObject();
-        object.put("prList",prList);//
-        object.put("SPOList",SPOList);//
+        object.put("prList",prList);
+        object.put("spoList",spoList);
         object.put("piList",rrList);//搏动指数改为呼吸
         object.put("rrList",rrList);//呼吸
+        object.put("pdrList",pdrList);//呼吸
         object.put("xyResult",xyResult);//血氧
         object.put("prResult",prResult);//脉率
         object.put("piResult",piResult);//搏动指数
@@ -66,13 +67,13 @@ public class SleepUtil {
         return object;
     }
 
-    private static String getZdxy(List<Integer> SPOList) {
+    private static String getZdxy(List<Integer> spoList) {
         int spotype = 0; //>300
         String spozx = "";
         int zhi = 100;
-        for (int i = 1; i < SPOList.size(); i++) {
-            int shangzhi = SPOList.get(i-1);
-            int benzhi = SPOList.get(i);
+        for (int i = 1; i < spoList.size(); i++) {
+            int shangzhi = spoList.get(i-1);
+            int benzhi = spoList.get(i);
             if (benzhi==shangzhi){
                 spotype++;
             }else {
@@ -98,9 +99,9 @@ public class SleepUtil {
         for (int i = 0; i <kbzhi; i++) {
             List<Long> objects = new ArrayList<>();
             long ts = date.getTime();
-            if (i == 0){
+            /*if (i == 0){
                 i = 1;
-            }
+            }*/
             objects.add(ts+i*1000);
             objects.add(Long.valueOf(prList.get(i)));
             list.add(objects);
@@ -108,7 +109,7 @@ public class SleepUtil {
         return list;
     }
 
-    private static int getfuzhi(List<EDFRecord> records, List<Integer> prList, List<Integer> RR, List<Integer> PI,List<Integer> SPOList,List<Integer> PDRList) {
+    private static int getfuzhi(List<EDFRecord> records, List<Integer> prList, List<Integer> RR, List<Integer> PI,List<Integer> spoList,List<Integer> pdrList) {
         int pdrtype = 0;
         for (EDFRecord record : records) {
             short[] hr = record.HR;
@@ -139,9 +140,9 @@ public class SleepUtil {
             short[] spO2 = record.SpO2;
             for (int i : spO2) {
                 if (i < 100) {
-                    SPOList.add(i);
+                    spoList.add(i);
                 } else {
-                    SPOList.add(0);
+                    spoList.add(0);
                 }
             }
             short[] PDR = record.BreathWave;
@@ -149,7 +150,7 @@ public class SleepUtil {
                 if (pdrtype >= (records.size())*2) {
                     break;
                 }
-                PDRList.add(i);
+                pdrList.add(i);
 
                 pdrtype++;
             }

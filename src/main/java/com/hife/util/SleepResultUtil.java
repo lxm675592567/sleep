@@ -227,7 +227,7 @@ public class SleepResultUtil {
         object.put("prListCopy",PrListCopy);//原始值
         object.put("listTime",listTime);//曲线图结果
         object.put("result",results);//曲线图原始值
-        object.put("xlResult",xlResult);//心率
+        object.put("xlResult",xlResult);//心率异常
         //object.put("smlxResult",smlx);//睡眠类型
         object.put("qxList",qxList);//清醒
         JSONObject jsonSm = new JSONObject();
@@ -335,61 +335,16 @@ public class SleepResultUtil {
         List<List<Object>> xl = new ArrayList<>();
         List<List<Object>> qt = new ArrayList<>();
         long ts = date.getTime();
-        for (int i = 0; i < qxList.size(); i++) {//清醒
-            List<Object> list = new ArrayList<>();
-            int qian = (int) qxList.get(i).get(0);
-            int hou = (int)qxList.get(i).get(1) ;
-            int zhi = (int)qxList.get(i).get(2) ;
-            list.add(ts + qian * 1000);
-            list.add(ts + hou * 1000);
-            list.add(zhi);
-            list.add("A");
-            qt.add(list);
-        }
-        for (int i = 0; i < ksydList.size(); i++) {//快速眼动
-            List<Object> list = new ArrayList<>();
-            int qian =  (int) ksydList.get(i).get(0);
-            int hou =  (int) ksydList.get(i).get(1);
-            int zhi = (int)ksydList.get(i).get(2);
-            list.add(ts + qian * 1000);
-            list.add(ts + hou * 1000);
-            list.add(zhi);
-            list.add("B");
-            qt.add(list);
-        }
-        for (int i = 0; i < ssList.size(); i++) {//深睡
-            List<Object> list = new ArrayList<>();
-            int qian =  (int) ssList.get(i).get(0);
-            int hou =  (int)ssList.get(i).get(1);
-            int zhi = (int)ssList.get(i).get(2);
-            list.add(ts + qian * 1000);
-            list.add(ts + hou * 1000);
-            list.add(zhi);
-            list.add("C");
-            qt.add(list);
-        }
-        for (int i = 0; i < zdssList.size(); i++) {//中度深睡
-            List<Object> list = new ArrayList<>();
-            int qian =  (int) zdssList.get(i).get(0);
-            int hou =  (int)zdssList.get(i).get(1);
-            int zhi = (int)zdssList.get(i).get(2);
-            list.add(ts + qian * 1000);
-            list.add(ts + hou * 1000);
-            list.add(zhi);
-            list.add("D");
-            qt.add(list);
-        }
-        for (int i = 0; i < qsList.size(); i++) {//浅睡
-            List<Object> list = new ArrayList<>();
-            int qian =  (int) qsList.get(i).get(0);
-            int hou =  (int) qsList.get(i).get(1);
-            int zhi = (int)qsList.get(i).get(2);
-            list.add(ts + qian * 1000);
-            list.add(ts + hou * 1000);
-            list.add(zhi);
-            list.add("E");
-            qt.add(list);
-        }
+        //清醒
+        getNewSmlx(qxList, qt, ts, "A");
+        //快速眼动
+        getNewSmlx(ksydList, qt, ts, "B");
+        //深睡
+        getNewSmlx(ssList, qt, ts, "C");
+        //中度深睡
+        getNewSmlx(zdssList, qt, ts, "D");
+        //浅睡
+        getNewSmlx(qsList, qt, ts, "E");
         for (int i = 0; i < xlList.size(); i++) {//心率
             List<Object> list = new ArrayList<>();
             int qian =  (int) xlList.get(i).get(0);
@@ -483,6 +438,20 @@ public class SleepResultUtil {
         arraySort.put("xl",arrayxlSort);
         arraySort.put("qt",arrayqtSort);
         return arraySort;
+    }
+
+    private static void getNewSmlx(List<List<Object>> qxList, List<List<Object>> qt, long ts, String a) {
+        for (int i = 0; i < qxList.size(); i++) {
+            List<Object> list = new ArrayList<>();
+            int qian = (int) qxList.get(i).get(0);
+            int hou = (int) qxList.get(i).get(1);
+            int zhi = (int) qxList.get(i).get(2);
+            list.add(ts + qian * 1000);
+            list.add(ts + hou * 1000);
+            list.add(zhi);
+            list.add(a);
+            qt.add(list);
+        }
     }
 
     private static List<List<Object>> getPaixus(List<List<Object>> arrayqtSort, int pxzb) {
@@ -599,10 +568,10 @@ public class SleepResultUtil {
         //String smqfz = df.format((double)startTimes/60);
         double smqfz = miaozhuanfen(startTimes);
 
-        //睡眠
+        //睡眠时间
         double smSleep = miaozhuanfen(smzsj);
 
-        //清醒 qxzsj
+        //清醒时间 qxzsj
         double qxSleep = miaozhuanfen(qxzsj);
 
         //占比
@@ -664,7 +633,11 @@ public class SleepResultUtil {
         }
 
         //小时
-        int hour = miao / 3600;
+        //int hour = miao / 3600;
+        int hour = (int)Math.ceil((double)miao/3600);
+        if (hour<=0){
+            hour = 1;
+        }
         //AHI
         int AHI = AHIlist.size() / hour;
 
@@ -1192,7 +1165,6 @@ public class SleepResultUtil {
                         }
                     }
 
-
                     if (shoumiao==weimiao){
                         break;
                     }
@@ -1395,7 +1367,7 @@ public class SleepResultUtil {
             int ztype = 0;
             if (leixing == 0){
                 //先往左边找最近者 倒叙
-                int qx =0 ;int ss =0 ;
+                int qx =0 ;int ss =0;
                 int zsszb = 0; int zqxzb = 0;
                 int zsszhi = 0; int zqxzhi = 0;
                 for (int j = i-1; j >= 0; j--) {

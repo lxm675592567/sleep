@@ -22,11 +22,8 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import static javax.xml.crypto.dsig.Transform.BASE64;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
