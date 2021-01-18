@@ -76,14 +76,18 @@ public class UploadServiceImpl implements UploadService {
 
             uploadMapper.SaveDatValue(record);
             //智能手环传平台
-            com.alibaba.fastjson.JSONObject jsonObject = updateData(record);
-            //数据传递睡力铺
-            slpData(jsonObject,record.getUrl());
+            new Thread(() -> {
+                try {
+                    this.updateData(record,record.getUrl());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
         }
         return "200";
     }
 
-    public com.alibaba.fastjson.JSONObject updateData(SleepRecord record) throws ParseException, JSONException {
+    public com.alibaba.fastjson.JSONObject updateData(SleepRecord record,String url) throws Exception {
         com.alibaba.fastjson.JSONObject json = new com.alibaba.fastjson.JSONObject();
         /*json.put("sleepId", "eeb7cec06a4445f1ba8faadfef94f531");
         json.put("datUrl", "D:/file/dat/黄智.dat");*/
@@ -116,8 +120,11 @@ public class UploadServiceImpl implements UploadService {
         sleepBasicValue.put("rrResult",(List<Integer>) sleepDataMap.get("rrResult"));
         sleepBasicValue.put("xyResult",(List<Integer>) sleepDataMap.get("xyResult"));
         sleepBasicValue.put("pdrResult",(List<Integer>) sleepDataMap.get("pdrResult"));
+        //数据传递睡力铺
+        slpData(sleepBasicValue,url);
         return sleepBasicValue;
     }
+
 
     public void slpData(com.alibaba.fastjson.JSONObject json,String url) throws Exception {
         /*BASE64Encoder encoder=new BASE64Encoder();
